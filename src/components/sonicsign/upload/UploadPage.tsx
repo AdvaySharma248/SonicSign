@@ -1,456 +1,462 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ArrowLeft,
-  FileUp,
+  Upload,
   FileText,
-  CheckCircle2,
   X,
-  Plus,
-  Eye,
-  Users,
+  CheckCircle,
   AlertCircle,
+  Loader2,
+  ArrowRight,
+  CloudUpload,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
+import { cn } from '@/lib/utils';
 import { useAppStore } from '@/store/useAppStore';
+import type { UploadFile } from '@/types';
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// ── Animation variants ──────────────────────────────────────────────
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.08, delayChildren: 0.1 },
+  },
+};
 
-type UploadPhase = 'idle' | 'uploading' | 'processing' | 'complete' | 'error';
+const itemVariants = {
+  hidden: { opacity: 0, y: 16 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] },
+  },
+};
 
-interface UploadFileInfo {
-  file: File;
-  name: string;
-  size: number;
-  progress: number;
-  phase: UploadPhase;
-  errorMessage?: string;
-}
+const fileVariants = {
+  initial: { opacity: 0, x: -20, scale: 0.95 },
+  animate: { opacity: 1, x: 0, scale: 1, transition: { duration: 0.3 } },
+  exit: { opacity: 0, x: 20, scale: 0.95, transition: { duration: 0.2 } },
+};
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
+// ── Helpers ─────────────────────────────────────────────────────────
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB
+const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 MB
 const ACCEPTED_TYPES = ['application/pdf'];
 
-function validateFile(file: File): string | null {
-  if (!ACCEPTED_TYPES.includes(file.type) && !file.name.toLowerCase().endsWith('.pdf')) {
-    return 'Only PDF files are accepted. Please select a .pdf file.';
-  }
-  if (file.size > MAX_FILE_SIZE) {
-    return `File size exceeds the 25MB limit. Your file is ${formatFileSize(file.size)}.`;
-  }
-  if (file.size === 0) {
-    return 'The file appears to be empty. Please select a valid PDF.';
-  }
-  return null;
-}
-
-// ─── Main Component ──────────────────────────────────────────────────────────
-
+// ── Component ───────────────────────────────────────────────────────
 export default function UploadPage() {
   const { setCurrentPage, setSelectedDocumentId } = useAppStore();
-
-  const [uploadInfo, setUploadInfo] = useState<UploadFileInfo | null>(null);
-  const [isDragOver, setIsDragOver] = useState(false);
-  const [validationError, setValidationError] = useState<string | null>(null);
+  const [files, setFiles] = useState<UploadFile[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const simulationRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const dragCounter = useRef(0);
 
-  // Cleanup simulation on unmount
-  useEffect(() => {
-    return () => {
-      if (simulationRef.current) clearInterval(simulationRef.current);
-    };
-  }, []);
-
-  // ─── Upload Simulation ────────────────────────────────────────────────────
-
-  const startUploadSimulation = useCallback((file: File) => {
-    const info: UploadFileInfo = {
-      file,
-      name: file.name,
-      size: file.size,
-      progress: 0,
-      phase: 'uploading',
-    };
-    setUploadInfo(info);
-    setValidationError(null);
-
-    // Simulate upload progress
+  // Simulate upload progress
+  const simulateUpload = useCallback((fileId: string) => {
     let progress = 0;
-    simulationRef.current = setInterval(() => {
-      progress += Math.random() * 12 + 3;
+    const interval = setInterval(() => {
+      progress += Math.random() * 20 + 5;
       if (progress >= 100) {
         progress = 100;
-        if (simulationRef.current) clearInterval(simulationRef.current);
-
-        setUploadInfo((prev) =>
-          prev ? { ...prev, progress: 100, phase: 'processing' } : null
+        clearInterval(interval);
+        setFiles((prev) =>
+          prev.map((f) =>
+            f.id === fileId
+              ? { ...f, progress: 100, status: 'processing' }
+              : f
+          )
         );
-
         // Simulate processing
         setTimeout(() => {
-          setUploadInfo((prev) =>
-            prev ? { ...prev, phase: 'complete' } : null
+          setFiles((prev) =>
+            prev.map((f) =>
+              f.id === fileId
+                ? { ...f, status: 'complete' }
+                : f
+            )
           );
-        }, 1200);
+        }, 1500);
       } else {
-        setUploadInfo((prev) =>
-          prev ? { ...prev, progress: Math.min(progress, 99) } : null
+        setFiles((prev) =>
+          prev.map((f) =>
+            f.id === fileId ? { ...f, progress: Math.min(progress, 100) } : f
+          )
         );
       }
-    }, 150);
+    }, 300);
   }, []);
 
-  // ─── File Handling ─────────────────────────────────────────────────────────
+  // Validate and add files
+  const addFiles = useCallback((fileList: FileList | File[]) => {
+    const newFiles: UploadFile[] = [];
 
-  const handleFileSelect = useCallback(
-    (file: File) => {
-      const error = validateFile(file);
-      if (error) {
-        setValidationError(error);
+    Array.from(fileList).forEach((file) => {
+      if (!ACCEPTED_TYPES.includes(file.type)) {
+        newFiles.push({
+          id: `file_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          progress: 0,
+          status: 'error',
+        });
         return;
       }
-      setValidationError(null);
-      startUploadSimulation(file);
-    },
-    [startUploadSimulation]
-  );
 
-  const handleInputChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (file) handleFileSelect(file);
-      // Reset input so same file can be selected again
-      e.target.value = '';
-    },
-    [handleFileSelect]
-  );
+      if (file.size > MAX_FILE_SIZE) {
+        newFiles.push({
+          id: `file_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          progress: 0,
+          status: 'error',
+        });
+        return;
+      }
 
-  // ─── Drag & Drop ──────────────────────────────────────────────────────────
+      const uploadFile: UploadFile = {
+        id: `file_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        progress: 0,
+        status: 'uploading',
+      };
+      newFiles.push(uploadFile);
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
+      // Simulate upload progress
+      simulateUpload(uploadFile.id);
+    });
+
+    setFiles((prev) => [...prev, ...newFiles]);
+  }, [simulateUpload]);
+
+  const removeFile = useCallback((fileId: string) => {
+    setFiles((prev) => prev.filter((f) => f.id !== fileId));
+  }, []);
+
+  // Drag handlers
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsDragOver(true);
+    dragCounter.current++;
+    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+      setIsDragging(true);
+    }
   }, []);
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsDragOver(false);
+    dragCounter.current--;
+    if (dragCounter.current === 0) {
+      setIsDragging(false);
+    }
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
   }, []);
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      setIsDragOver(false);
+      setIsDragging(false);
+      dragCounter.current = 0;
 
-      const file = e.dataTransfer.files?.[0];
-      if (file) handleFileSelect(file);
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        addFiles(e.dataTransfer.files);
+      }
     },
-    [handleFileSelect]
+    [addFiles]
   );
 
-  // ─── Actions ───────────────────────────────────────────────────────────────
+  const handleFileInput = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.files && e.target.files.length > 0) {
+        addFiles(e.target.files);
+        e.target.value = '';
+      }
+    },
+    [addFiles]
+  );
 
-  const handleReset = useCallback(() => {
-    if (simulationRef.current) clearInterval(simulationRef.current);
-    setUploadInfo(null);
-    setValidationError(null);
-  }, []);
-
-  const handleViewDocument = useCallback(() => {
-    // Navigate to document details with the first mock doc as placeholder
-    setSelectedDocumentId('doc_001');
-    setCurrentPage('document-details');
-  }, [setCurrentPage, setSelectedDocumentId]);
-
-  const handleAddSigners = useCallback(() => {
-    setSelectedDocumentId('doc_001');
-    setCurrentPage('document-details');
-  }, [setCurrentPage, setSelectedDocumentId]);
-
-  // ─── Status text ───────────────────────────────────────────────────────────
-
-  const getStatusText = (phase: UploadPhase): string => {
-    switch (phase) {
-      case 'uploading':
-        return 'Uploading...';
-      case 'processing':
-        return 'Processing...';
-      case 'complete':
-        return 'Complete!';
-      case 'error':
-        return 'Upload failed';
-      default:
-        return '';
-    }
-  };
-
-  // ─── Render ────────────────────────────────────────────────────────────────
+  const completedFiles = files.filter((f) => f.status === 'complete');
+  const hasErrors = files.some((f) => f.status === 'error');
+  const isUploading = files.some(
+    (f) => f.status === 'uploading' || f.status === 'processing'
+  );
 
   return (
-    <div className="flex flex-col h-full">
-      {/* ─── Header ────────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-4 pb-6">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-9 rounded-xl"
-          onClick={() => setCurrentPage('documents')}
+    <motion.div
+      className="mx-auto w-full max-w-3xl space-y-8 px-4 py-8 sm:px-6 lg:px-8"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      {/* Header */}
+      <motion.section variants={itemVariants}>
+        <h1 className="text-2xl font-bold tracking-tight text-[#111827] sm:text-3xl">
+          Upload Document
+        </h1>
+        <p className="mt-1.5 text-sm text-[#6B7280] sm:text-base">
+          Upload a PDF document to prepare for electronic signatures
+        </p>
+      </motion.section>
+
+      {/* Drop Zone */}
+      <motion.section variants={itemVariants}>
+        <div
+          onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave}
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+          onClick={() => fileInputRef.current?.click()}
+          className={cn(
+            'relative cursor-pointer rounded-2xl border-2 border-dashed transition-all duration-300',
+            isDragging
+              ? 'border-[#365CF5] bg-[#365CF5]/5 scale-[1.01]'
+              : 'border-[#E5E7EB] bg-white hover:border-[#365CF5]/40 hover:bg-[#365CF5]/[0.02]'
+          )}
+          style={{ padding: '48px 24px' }}
+          role="button"
+          tabIndex={0}
+          aria-label="Upload PDF document"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              fileInputRef.current?.click();
+            }
+          }}
         >
-          <ArrowLeft className="size-5" />
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">
-            Upload Document
-          </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Add a new PDF document to your workspace
-          </p>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf"
+            multiple
+            onChange={handleFileInput}
+            className="hidden"
+            aria-hidden="true"
+          />
+
+          <div className="flex flex-col items-center text-center">
+            <motion.div
+              className={cn(
+                'flex h-16 w-16 items-center justify-center rounded-2xl transition-colors duration-300',
+                isDragging ? 'bg-[#365CF5]/15' : 'bg-[#EEF2FF]'
+              )}
+              animate={isDragging ? { scale: [1, 1.1, 1] } : {}}
+              transition={{ duration: 0.6, repeat: isDragging ? Infinity : 0 }}
+            >
+              <CloudUpload
+                className={cn(
+                  'h-8 w-8 transition-colors duration-300',
+                  isDragging ? 'text-[#365CF5]' : 'text-[#365CF5]/70'
+                )}
+                strokeWidth={1.5}
+              />
+            </motion.div>
+
+            <p className="mt-4 text-base font-semibold text-[#111827]">
+              {isDragging ? 'Drop your files here' : 'Drag and drop your PDF here'}
+            </p>
+            <p className="mt-1.5 text-sm text-[#6B7280]">
+              or click to browse from your computer
+            </p>
+            <p className="mt-3 text-xs text-[#9CA3AF]">
+              PDF only &middot; Max 25 MB per file
+            </p>
+          </div>
         </div>
-      </div>
+      </motion.section>
 
-      {/* ─── Main Content ──────────────────────────────────────────────────── */}
-      <div className="flex-1 flex items-start justify-center">
-        <div className="w-full max-w-xl">
-          <AnimatePresence mode="wait">
-            {/* ─── Idle / Drop Zone State ──────────────────────────────────────── */}
-            {!uploadInfo && (
-              <motion.div
-                key="dropzone"
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -12 }}
-                transition={{ duration: 0.2 }}
-              >
-                <div
-                  className={cn(
-                    'relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-12 transition-all duration-200 cursor-pointer',
-                    isDragOver
-                      ? 'border-primary bg-primary/[0.03] scale-[1.01]'
-                      : 'border-sonic-border bg-white hover:border-primary/40 hover:bg-primary/[0.01]'
-                  )}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onDrop={handleDrop}
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".pdf,application/pdf"
-                    onChange={handleInputChange}
-                    className="hidden"
-                  />
-
-                  <motion.div
-                    animate={isDragOver ? { scale: 1.05, y: -4 } : { scale: 1, y: 0 }}
-                    transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                    className={cn(
-                      'flex size-16 items-center justify-center rounded-2xl mb-5 transition-colors duration-200',
-                      isDragOver
-                        ? 'bg-primary/10 text-primary'
-                        : 'bg-muted/60 text-muted-foreground'
-                    )}
-                  >
-                    <FileUp className="size-8" />
-                  </motion.div>
-
-                  <h3 className="text-base font-semibold text-foreground mb-1">
-                    {isDragOver
-                      ? 'Drop your PDF here'
-                      : 'Drag and drop your PDF here'}
-                  </h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    {isDragOver ? (
-                      'Release to upload'
-                    ) : (
-                      <>
-                        or{' '}
-                        <span className="text-primary font-medium underline underline-offset-2">
-                          click to browse
-                        </span>
-                      </>
-                    )}
-                  </p>
-                  <span className="text-xs text-muted-foreground/70">
-                    PDF only &middot; Max 25MB
-                  </span>
-                </div>
-
-                {/* Validation Error */}
-                <AnimatePresence>
-                  {validationError && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -8, height: 0 }}
-                      animate={{ opacity: 1, y: 0, height: 'auto' }}
-                      exit={{ opacity: 0, y: -8, height: 0 }}
-                      className="mt-4"
-                    >
-                      <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4">
-                        <AlertCircle className="size-5 text-red-500 shrink-0 mt-0.5" />
-                        <div>
-                          <p className="text-sm font-medium text-red-800">
-                            Upload Error
-                          </p>
-                          <p className="text-sm text-red-600 mt-0.5">
-                            {validationError}
-                          </p>
-                        </div>
-                        <button
-                          className="ml-auto shrink-0 text-red-400 hover:text-red-600 transition-colors"
-                          onClick={() => setValidationError(null)}
-                        >
-                          <X className="size-4" />
-                        </button>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
+      {/* File List */}
+      {files.length > 0 && (
+        <motion.section variants={itemVariants} className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-[#111827]">
+              Uploaded Files ({files.length})
+            </h2>
+            {hasErrors && (
+              <p className="text-xs text-[#EF4444] font-medium">
+                Some files could not be uploaded
+              </p>
             )}
+          </div>
 
-            {/* ─── Uploading / Processing / Complete State ─────────────────────── */}
-            {uploadInfo && (
-              <motion.div
-                key="upload-progress"
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -12 }}
-                transition={{ duration: 0.2 }}
-              >
-                <div className="rounded-2xl border border-sonic-border bg-white p-6">
-                  {/* File Info */}
-                  <div className="flex items-start gap-4">
-                    <div
-                      className={cn(
-                        'flex size-12 shrink-0 items-center justify-center rounded-xl transition-colors duration-300',
-                        uploadInfo.phase === 'complete'
-                          ? 'bg-emerald-50 text-emerald-600'
-                          : uploadInfo.phase === 'error'
-                            ? 'bg-red-50 text-red-500'
-                            : 'bg-primary/5 text-primary'
-                      )}
-                    >
-                      {uploadInfo.phase === 'complete' ? (
-                        <CheckCircle2 className="size-6" />
-                      ) : (
-                        <FileText className="size-6" />
-                      )}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h3 className="font-semibold text-sm text-foreground truncate pr-8">
-                        {uploadInfo.name}
-                      </h3>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {formatFileSize(uploadInfo.size)}
-                      </p>
-                    </div>
-                    {/* Cancel / Reset button */}
-                    {uploadInfo.phase !== 'complete' && (
+          <div className="space-y-2">
+            <AnimatePresence mode="popLayout">
+              {files.map((file) => (
+                <motion.div
+                  key={file.id}
+                  variants={fileVariants}
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                  layout
+                >
+                  <Card
+                    className={cn(
+                      'rounded-xl border transition-colors',
+                      file.status === 'error'
+                        ? 'border-red-200 bg-red-50/50'
+                        : 'border-[#E5E7EB] bg-white'
+                    )}
+                    style={{ padding: 0 }}
+                  >
+                    <CardContent className="flex items-center gap-4 p-4">
+                      {/* File Icon */}
+                      <div
+                        className={cn(
+                          'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl',
+                          file.status === 'error'
+                            ? 'bg-red-100'
+                            : file.status === 'complete'
+                              ? 'bg-emerald-50'
+                              : 'bg-[#EEF2FF]'
+                        )}
+                      >
+                        {file.status === 'complete' ? (
+                          <CheckCircle className="h-5 w-5 text-emerald-500" />
+                        ) : file.status === 'error' ? (
+                          <AlertCircle className="h-5 w-5 text-red-500" />
+                        ) : file.status === 'processing' ? (
+                          <Loader2 className="h-5 w-5 text-[#365CF5] animate-spin" />
+                        ) : (
+                          <FileText className="h-5 w-5 text-[#365CF5]" />
+                        )}
+                      </div>
+
+                      {/* File Info */}
+                      <div className="min-w-0 flex-1">
+                        <p
+                          className={cn(
+                            'truncate text-sm font-medium',
+                            file.status === 'error'
+                              ? 'text-red-700'
+                              : 'text-[#111827]'
+                          )}
+                        >
+                          {file.name}
+                        </p>
+                        <div className="mt-1 flex items-center gap-2">
+                          <p className="text-xs text-[#6B7280]">
+                            {formatFileSize(file.size)}
+                          </p>
+                          {file.status === 'uploading' && (
+                            <>
+                              <span className="text-xs text-[#9CA3AF]">&middot;</span>
+                              <p className="text-xs font-medium text-[#365CF5]">
+                                {Math.round(file.progress)}%
+                              </p>
+                            </>
+                          )}
+                          {file.status === 'processing' && (
+                            <>
+                              <span className="text-xs text-[#9CA3AF]">&middot;</span>
+                              <p className="text-xs font-medium text-[#365CF5]">
+                                Processing...
+                              </p>
+                            </>
+                          )}
+                          {file.status === 'error' && (
+                            <>
+                              <span className="text-xs text-red-400">&middot;</span>
+                              <p className="text-xs font-medium text-red-600">
+                                {file.type !== 'application/pdf'
+                                  ? 'Only PDF files are accepted'
+                                  : 'File exceeds 25 MB limit'}
+                              </p>
+                            </>
+                          )}
+                        </div>
+
+                        {/* Progress Bar */}
+                        {(file.status === 'uploading' ||
+                          file.status === 'processing') && (
+                          <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-[#EEF2FF]">
+                            <motion.div
+                              className="h-full rounded-full bg-[#365CF5]"
+                              initial={{ width: 0 }}
+                              animate={{
+                                width:
+                                  file.status === 'processing'
+                                    ? '100%'
+                                    : `${file.progress}%`,
+                              }}
+                              transition={{
+                                duration: 0.3,
+                                ease: 'easeOut',
+                              }}
+                            />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Remove Button */}
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="size-8 shrink-0 rounded-lg -mt-0.5 -mr-2"
-                        onClick={handleReset}
+                        className="h-8 w-8 shrink-0 text-[#9CA3AF] hover:text-[#EF4444]"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeFile(file.id);
+                        }}
+                        aria-label={`Remove ${file.name}`}
                       >
-                        <X className="size-4" />
+                        <X className="h-4 w-4" />
                       </Button>
-                    )}
-                  </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
 
-                  {/* Progress Bar */}
-                  <div className="mt-5">
-                    <div className="flex items-center justify-between mb-2">
-                      <span
-                        className={cn(
-                          'text-sm font-medium transition-colors duration-300',
-                          uploadInfo.phase === 'complete'
-                            ? 'text-emerald-600'
-                            : uploadInfo.phase === 'processing'
-                              ? 'text-amber-600'
-                              : 'text-foreground'
-                        )}
-                      >
-                        {getStatusText(uploadInfo.phase)}
-                      </span>
-                      <span className="text-sm text-muted-foreground tabular-nums">
-                        {uploadInfo.phase === 'complete'
-                          ? '100%'
-                          : `${Math.round(uploadInfo.progress)}%`}
-                      </span>
-                    </div>
-                    <Progress
-                      value={
-                        uploadInfo.phase === 'complete'
-                          ? 100
-                          : uploadInfo.progress
-                      }
-                      className={cn(
-                        'h-2 rounded-full transition-colors duration-300',
-                        uploadInfo.phase === 'complete'
-                          ? '[&>[data-slot=progress-indicator]]:bg-emerald-500'
-                          : uploadInfo.phase === 'processing'
-                            ? '[&>[data-slot=progress-indicator]]:bg-amber-500'
-                            : '[&>[data-slot=progress-indicator]]:bg-primary'
-                      )}
-                    />
-                  </div>
-                </div>
-
-                {/* ─── Complete State Actions ──────────────────────────────────── */}
-                <AnimatePresence>
-                  {uploadInfo.phase === 'complete' && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 12 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: 0.15 }}
-                      className="mt-4 flex flex-col sm:flex-row gap-3"
-                    >
-                      <Button
-                        className="flex-1 rounded-xl"
-                        onClick={handleAddSigners}
-                      >
-                        <Users className="size-4" />
-                        Add Signers
-                      </Button>
-                      <Button
-                        variant="outline"
-                        className="flex-1 rounded-xl border-sonic-border"
-                        onClick={handleViewDocument}
-                      >
-                        <Eye className="size-4" />
-                        View Document
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        className="rounded-xl"
-                        onClick={handleReset}
-                      >
-                        <Plus className="size-4" />
-                        Upload Another
-                      </Button>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      </div>
-    </div>
+          {/* Action Buttons */}
+          {completedFiles.length > 0 && (
+            <motion.div
+              className="flex items-center justify-end gap-3 pt-4"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <Button
+                variant="outline"
+                className="rounded-xl border-[#E5E7EB] text-[#6B7280] hover:text-[#111827]"
+                onClick={() => setFiles([])}
+                disabled={isUploading}
+              >
+                Clear All
+              </Button>
+              <Button
+                className="rounded-xl bg-[#365CF5] text-white hover:bg-[#2B4FE0] gap-2"
+                onClick={() => {
+                  if (completedFiles.length > 0) {
+                    setSelectedDocumentId('doc_001');
+                    setCurrentPage('signature-placement');
+                  }
+                }}
+                disabled={isUploading}
+              >
+                Prepare for Signing
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </motion.div>
+          )}
+        </motion.section>
+      )}
+    </motion.div>
   );
 }
