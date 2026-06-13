@@ -1,0 +1,865 @@
+     1→     1→'use client';
+     2→     2→
+     3→     3→import React, { useState } from 'react';
+     4→     4→import { motion, AnimatePresence } from 'framer-motion';
+     5→     5→import {
+     6→     6→  User,
+     7→     7→  Shield,
+     8→     8→  Bell,
+     9→     9→  Palette,
+    10→    10→  Save,
+    11→    11→  Camera,
+    12→    12→  Monitor,
+    13→    13→  Moon,
+    14→    14→  Sun,
+    15→    15→  Smartphone,
+    16→    16→  LogOut,
+    17→    17→  ChevronRight,
+    18→    18→} from 'lucide-react';
+    19→    19→import { cn } from '@/lib/utils';
+    20→    20→import { Button } from '@/components/ui/button';
+    21→    21→import { Input } from '@/components/ui/input';
+    22→    22→import { Label } from '@/components/ui/label';
+    23→    23→import { Switch } from '@/components/ui/switch';
+    24→    24→import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+    25→    25→import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+    26→    26→import { Separator } from '@/components/ui/separator';
+    27→    27→import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+    28→    28→import { useToast } from '@/hooks/use-toast';
+    29→    29→import { mockUser } from '@/data/mock';
+    30→    30→import type { NotificationSettings, AppearanceSettings } from '@/types';
+    31→    31→import { useIsMobile } from '@/hooks/use-mobile';
+    32→    32→
+    33→    33→type SettingsSection = 'profile' | 'security' | 'notifications' | 'appearance';
+    34→    34→
+    35→    35→const sectionNav: { id: SettingsSection; label: string; icon: React.ElementType }[] = [
+    36→    36→  { id: 'profile', label: 'Profile', icon: User },
+    37→    37→  { id: 'security', label: 'Security', icon: Shield },
+    38→    38→  { id: 'notifications', label: 'Notifications', icon: Bell },
+    39→    39→  { id: 'appearance', label: 'Appearance', icon: Palette },
+    40→    40→];
+    41→    41→
+    42→    42→const mockSessions = [
+    43→    43→  {
+    44→    44→    id: 'sess_001',
+    45→    45→    device: 'MacBook Pro — Chrome',
+    46→    46→    location: 'San Francisco, CA',
+    47→    47→    lastActive: 'Now',
+    48→    48→    current: true,
+    49→    49→  },
+    50→    50→  {
+    51→    51→    id: 'sess_002',
+    52→    52→    device: 'iPhone 15 — Safari',
+    53→    53→    location: 'San Francisco, CA',
+    54→    54→    lastActive: '2 hours ago',
+    55→    55→    current: false,
+    56→    56→  },
+    57→    57→];
+    58→    58→
+    59→    59→const contentVariants = {
+    60→    60→  hidden: { opacity: 0, y: 12 },
+    61→    61→  visible: { opacity: 1, y: 0 },
+    62→    62→  exit: { opacity: 0, y: -12 },
+    63→    63→};
+    64→    64→
+    65→    65→const contentTransition = {
+    66→    66→  duration: 0.25,
+    67→    67→  ease: [0.25, 0.46, 0.45, 0.94],
+    68→    68→};
+    69→    69→
+    70→    70→export default function SettingsPage() {
+    71→    71→  const isMobile = useIsMobile();
+    72→    72→  const [activeSection, setActiveSection] = useState<SettingsSection>('profile');
+    73→    73→  const { toast } = useToast();
+    74→    74→
+    75→    75→  // Profile state
+    76→    76→  const [profileName, setProfileName] = useState(mockUser.name);
+    77→    77→  const [profileOrg, setProfileOrg] = useState(mockUser.organization || '');
+    78→    78→
+    79→    79→  // Security state
+    80→    80→  const [currentPassword, setCurrentPassword] = useState('');
+    81→    81→  const [newPassword, setNewPassword] = useState('');
+    82→    82→  const [confirmPassword, setConfirmPassword] = useState('');
+    83→    83→  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+    84→    84→
+    85→    85→  // Notification state
+    86→    86→  const [notifications, setNotifications] = useState<NotificationSettings>({
+    87→    87→    emailOnSignature: true,
+    88→    88→    emailOnRejection: true,
+    89→    89→    emailOnExpiry: false,
+    90→    90→    weeklyDigest: true,
+    91→    91→  });
+    92→    92→
+    93→    93→  // Appearance state
+    94→    94→  const [appearance, setAppearance] = useState<AppearanceSettings>({
+    95→    95→    theme: 'light',
+    96→    96→    compactMode: false,
+    97→    97→    fontSize: 'medium',
+    98→    98→  });
+    99→    99→
+   100→   100→  const handleSaveProfile = () => {
+   101→   101→    toast({
+   102→   102→      title: 'Profile updated',
+   103→   103→      description: 'Your profile changes have been saved.',
+   104→   104→    });
+   105→   105→  };
+   106→   106→
+   107→   107→  const handleChangePassword = () => {
+   108→   108→    if (newPassword !== confirmPassword) {
+   109→   109→      toast({
+   110→   110→        title: 'Passwords do not match',
+   111→   111→        description: 'Please make sure your new passwords match.',
+   112→   112→        variant: 'destructive',
+   113→   113→      });
+   114→   114→      return;
+   115→   115→    }
+   116→   116→    if (newPassword.length < 8) {
+   117→   117→      toast({
+   118→   118→        title: 'Password too short',
+   119→   119→        description: 'Password must be at least 8 characters long.',
+   120→   120→        variant: 'destructive',
+   121→   121→      });
+   122→   122→      return;
+   123→   123→    }
+   124→   124→    setCurrentPassword('');
+   125→   125→    setNewPassword('');
+   126→   126→    setConfirmPassword('');
+   127→   127→    toast({
+   128→   128→      title: 'Password changed',
+   129→   129→      description: 'Your password has been updated successfully.',
+   130→   130→    });
+   131→   131→  };
+   132→   132→
+   133→   133→  const handleSaveNotifications = () => {
+   134→   134→    toast({
+   135→   135→      title: 'Notifications updated',
+   136→   136→      description: 'Your notification preferences have been saved.',
+   137→   137→    });
+   138→   138→  };
+   139→   139→
+   140→   140→  const handleSaveAppearance = () => {
+   141→   141→    toast({
+   142→   142→      title: 'Appearance updated',
+   143→   143→      description: 'Your appearance settings have been saved.',
+   144→   144→    });
+   145→   145→  };
+   146→   146→
+   147→   147→  const handleToggle2FA = (enabled: boolean) => {
+   148→   148→    setTwoFactorEnabled(enabled);
+   149→   149→    toast({
+   150→   150→      title: enabled ? '2FA enabled' : '2FA disabled',
+   151→   151→      description: enabled
+   152→   152→        ? 'Two-factor authentication has been enabled for your account.'
+   153→   153→        : 'Two-factor authentication has been disabled.',
+   154→   154→    });
+   155→   155→  };
+   156→   156→
+   157→   157→  const handleSignOutAll = () => {
+   158→   158→    toast({
+   159→   159→      title: 'Signed out',
+   160→   160→      description: 'You have been signed out of all other devices.',
+   161→   161→    });
+   162→   162→  };
+   163→   163→
+   164→   164→  const updateNotification = (key: keyof NotificationSettings, value: boolean) => {
+   165→   165→    setNotifications((prev) => ({ ...prev, [key]: value }));
+   166→   166→  };
+   167→   167→
+   168→   168→  return (
+   169→   169→    <div className="flex flex-col h-full">
+   170→   170→      {/* Header */}
+   171→   171→      <div className="px-1 mb-6">
+   172→   172→        <h1 className="text-2xl font-semibold text-sonic-text tracking-tight">
+   173→   173→          Settings
+   174→   174→        </h1>
+   175→   175→        <p className="text-sm text-sonic-text-secondary mt-1">
+   176→   176→          Manage your account preferences and configuration
+   177→   177→        </p>
+   178→   178→      </div>
+   179→   179→
+   180→   180→      <div className="flex flex-col md:flex-row gap-6 flex-1">
+   181→   181→        {/* Sidebar Navigation (Desktop) / Top Tabs (Mobile) */}
+   182→   182→        {isMobile ? (
+   183→   183→          <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-lg overflow-x-auto">
+   184→   184→            {sectionNav.map((section) => {
+   185→   185→              const Icon = section.icon;
+   186→   186→              return (
+   187→   187→                <button
+   188→   188→                  key={section.id}
+   189→   189→                  onClick={() => setActiveSection(section.id)}
+   190→   190→                  className={cn(
+   191→   191→                    'flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-all whitespace-nowrap',
+   192→   192→                    activeSection === section.id
+   193→   193→                      ? 'bg-white text-sonic-text shadow-sm'
+   194→   194→                      : 'text-sonic-text-secondary hover:text-sonic-text'
+   195→   195→                  )}
+   196→   196→                >
+   197→   197→                  <Icon className="size-3.5" />
+   198→   198→                  {section.label}
+   199→   199→                </button>
+   200→   200→              );
+   201→   201→            })}
+   202→   202→          </div>
+   203→   203→        ) : (
+   204→   204→          <nav className="w-52 shrink-0">
+   205→   205→            <div className="flex flex-col gap-1">
+   206→   206→              {sectionNav.map((section) => {
+   207→   207→                const Icon = section.icon;
+   208→   208→                return (
+   209→   209→                  <button
+   210→   210→                    key={section.id}
+   211→   211→                    onClick={() => setActiveSection(section.id)}
+   212→   212→                    className={cn(
+   213→   213→                      'flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-all text-left',
+   214→   214→                      activeSection === section.id
+   215→   215→                        ? 'bg-sonic-secondary text-sonic-primary'
+   216→   216→                        : 'text-sonic-text-secondary hover:bg-muted/50 hover:text-sonic-text'
+   217→   217→                    )}
+   218→   218→                  >
+   219→   219→                    <span className="flex items-center gap-2.5">
+   220→   220→                      <Icon className="size-4" />
+   221→   221→                      {section.label}
+   222→   222→                    </span>
+   223→   223→                    <ChevronRight
+   224→   224→                      className={cn(
+   225→   225→                        'size-3.5 transition-opacity',
+   226→   226→                        activeSection === section.id
+   227→   227→                          ? 'opacity-100'
+   228→   228→                          : 'opacity-0'
+   229→   229→                      )}
+   230→   230→                    />
+   231→   231→                  </button>
+   232→   232→                );
+   233→   233→              })}
+   234→   234→            </div>
+   235→   235→          </nav>
+   236→   236→        )}
+   237→   237→
+   238→   238→        {/* Content Area */}
+   239→   239→        <div className="flex-1 min-w-0">
+   240→   240→          <AnimatePresence mode="wait">
+   241→   241→            {activeSection === 'profile' && (
+   242→   242→              <motion.div
+   243→   243→                key="profile"
+   244→   244→                variants={contentVariants}
+   245→   245→                initial="hidden"
+   246→   246→                animate="visible"
+   247→   247→                exit="exit"
+   248→   248→                transition={contentTransition}
+   249→   249→              >
+   250→   250→                <ProfileSection
+   251→   251→                  profileName={profileName}
+   252→   252→                  setProfileName={setProfileName}
+   253→   253→                  profileOrg={profileOrg}
+   254→   254→                  setProfileOrg={setProfileOrg}
+   255→   255→                  onSave={handleSaveProfile}
+   256→   256→                />
+   257→   257→              </motion.div>
+   258→   258→            )}
+   259→   259→            {activeSection === 'security' && (
+   260→   260→              <motion.div
+   261→   261→                key="security"
+   262→   262→                variants={contentVariants}
+   263→   263→                initial="hidden"
+   264→   264→                animate="visible"
+   265→   265→                exit="exit"
+   266→   266→                transition={contentTransition}
+   267→   267→              >
+   268→   268→                <SecuritySection
+   269→   269→                  currentPassword={currentPassword}
+   270→   270→                  setCurrentPassword={setCurrentPassword}
+   271→   271→                  newPassword={newPassword}
+   272→   272→                  setNewPassword={setNewPassword}
+   273→   273→                  confirmPassword={confirmPassword}
+   274→   274→                  setConfirmPassword={setConfirmPassword}
+   275→   275→                  twoFactorEnabled={twoFactorEnabled}
+   276→   276→                  onToggle2FA={handleToggle2FA}
+   277→   277→                  onChangePassword={handleChangePassword}
+   278→   278→                  onSignOutAll={handleSignOutAll}
+   279→   279→                />
+   280→   280→              </motion.div>
+   281→   281→            )}
+   282→   282→            {activeSection === 'notifications' && (
+   283→   283→              <motion.div
+   284→   284→                key="notifications"
+   285→   285→                variants={contentVariants}
+   286→   286→                initial="hidden"
+   287→   287→                animate="visible"
+   288→   288→                exit="exit"
+   289→   289→                transition={contentTransition}
+   290→   290→              >
+   291→   291→                <NotificationsSection
+   292→   292→                  notifications={notifications}
+   293→   293→                  updateNotification={updateNotification}
+   294→   294→                  onSave={handleSaveNotifications}
+   295→   295→                />
+   296→   296→              </motion.div>
+   297→   297→            )}
+   298→   298→            {activeSection === 'appearance' && (
+   299→   299→              <motion.div
+   300→   300→                key="appearance"
+   301→   301→                variants={contentVariants}
+   302→   302→                initial="hidden"
+   303→   303→                animate="visible"
+   304→   304→                exit="exit"
+   305→   305→                transition={contentTransition}
+   306→   306→              >
+   307→   307→                <AppearanceSection
+   308→   308→                  appearance={appearance}
+   309→   309→                  setAppearance={setAppearance}
+   310→   310→                  onSave={handleSaveAppearance}
+   311→   311→                />
+   312→   312→              </motion.div>
+   313→   313→            )}
+   314→   314→          </AnimatePresence>
+   315→   315→        </div>
+   316→   316→      </div>
+   317→   317→    </div>
+   318→   318→  );
+   319→   319→}
+   320→   320→
+   321→   321→// ─── Profile Section ─────────────────────────────────────────────────────
+   322→   322→
+   323→   323→function ProfileSection({
+   324→   324→  profileName,
+   325→   325→  setProfileName,
+   326→   326→  profileOrg,
+   327→   327→  setProfileOrg,
+   328→   328→  onSave,
+   329→   329→}: {
+   330→   330→  profileName: string;
+   331→   331→  setProfileName: (v: string) => void;
+   332→   332→  profileOrg: string;
+   333→   333→  setProfileOrg: (v: string) => void;
+   334→   334→  onSave: () => void;
+   335→   335→}) {
+   336→   336→  return (
+   337→   337→    <Card className="border-sonic-border shadow-sm">
+   338→   338→      <CardHeader>
+   339→   339→        <CardTitle className="text-lg">Profile Information</CardTitle>
+   340→   340→        <CardDescription>
+   341→   341→          Update your personal information and organization details
+   342→   342→        </CardDescription>
+   343→   343→      </CardHeader>
+   344→   344→      <CardContent className="space-y-6">
+   345→   345→        {/* Avatar */}
+   346→   346→        <div className="flex items-center gap-4">
+   347→   347→          <Avatar className="size-16 border-2 border-sonic-border">
+   348→   348→            <AvatarFallback className="bg-sonic-secondary text-sonic-primary text-lg font-semibold">
+   349→   349→              {profileName.split(' ').map(n => n[0]).join('')}
+   350→   350→            </AvatarFallback>
+   351→   351→          </Avatar>
+   352→   352→          <div>
+   353→   353→            <Button variant="outline" size="sm" className="border-sonic-border gap-1.5">
+   354→   354→              <Camera className="size-3.5" />
+   355→   355→              Change Avatar
+   356→   356→            </Button>
+   357→   357→            <p className="text-xs text-sonic-text-secondary mt-1.5">
+   358→   358→              JPG, PNG or GIF. Max 2MB.
+   359→   359→            </p>
+   360→   360→          </div>
+   361→   361→        </div>
+   362→   362→
+   363→   363→        <Separator className="bg-sonic-border" />
+   364→   364→
+   365→   365→        {/* Form Fields */}
+   366→   366→        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+   367→   367→          <div className="space-y-2">
+   368→   368→            <Label htmlFor="profile-name" className="text-sm font-medium text-sonic-text">
+   369→   369→              Full Name
+   370→   370→            </Label>
+   371→   371→            <Input
+   372→   372→              id="profile-name"
+   373→   373→              value={profileName}
+   374→   374→              onChange={(e) => setProfileName(e.target.value)}
+   375→   375→              className="border-sonic-border"
+   376→   376→            />
+   377→   377→          </div>
+   378→   378→          <div className="space-y-2">
+   379→   379→            <Label htmlFor="profile-email" className="text-sm font-medium text-sonic-text">
+   380→   380→              Email
+   381→   381→            </Label>
+   382→   382→            <Input
+   383→   383→              id="profile-email"
+   384→   384→              value={mockUser.email}
+   385→   385→              disabled
+   386→   386→              className="border-sonic-border bg-muted/30"
+   387→   387→            />
+   388→   388→            <p className="text-xs text-sonic-text-secondary">
+   389→   389→              Contact support to change your email address
+   390→   390→            </p>
+   391→   391→          </div>
+   392→   392→          <div className="space-y-2">
+   393→   393→            <Label htmlFor="profile-org" className="text-sm font-medium text-sonic-text">
+   394→   394→              Organization
+   395→   395→            </Label>
+   396→   396→            <Input
+   397→   397→              id="profile-org"
+   398→   398→              value={profileOrg}
+   399→   399→              onChange={(e) => setProfileOrg(e.target.value)}
+   400→   400→              className="border-sonic-border"
+   401→   401→            />
+   402→   402→          </div>
+   403→   403→          <div className="space-y-2">
+   404→   404→            <Label className="text-sm font-medium text-sonic-text">Role</Label>
+   405→   405→            <Input
+   406→   406→              value={mockUser.role.charAt(0).toUpperCase() + mockUser.role.slice(1)}
+   407→   407→              disabled
+   408→   408→              className="border-sonic-border bg-muted/30 capitalize"
+   409→   409→            />
+   410→   410→          </div>
+   411→   411→        </div>
+   412→   412→
+   413→   413→        <div className="flex justify-end pt-2">
+   414→   414→          <Button
+   415→   415→            onClick={onSave}
+   416→   416→            className="bg-sonic-primary hover:bg-sonic-primary/90 text-white"
+   417→   417→          >
+   418→   418→            <Save className="size-4" />
+   419→   419→            Save Changes
+   420→   420→          </Button>
+   421→   421→        </div>
+   422→   422→      </CardContent>
+   423→   423→    </Card>
+   424→   424→  );
+   425→   425→}
+   426→   426→
+   427→   427→// ─── Security Section ─────────────────────────────────────────────────────
+   428→   428→
+   429→   429→function SecuritySection({
+   430→   430→  currentPassword,
+   431→   431→  setCurrentPassword,
+   432→   432→  newPassword,
+   433→   433→  setNewPassword,
+   434→   434→  confirmPassword,
+   435→   435→  setConfirmPassword,
+   436→   436→  twoFactorEnabled,
+   437→   437→  onToggle2FA,
+   438→   438→  onChangePassword,
+   439→   439→  onSignOutAll,
+   440→   440→}: {
+   441→   441→  currentPassword: string;
+   442→   442→  setCurrentPassword: (v: string) => void;
+   443→   443→  newPassword: string;
+   444→   444→  setNewPassword: (v: string) => void;
+   445→   445→  confirmPassword: string;
+   446→   446→  setConfirmPassword: (v: string) => void;
+   447→   447→  twoFactorEnabled: boolean;
+   448→   448→  onToggle2FA: (v: boolean) => void;
+   449→   449→  onChangePassword: () => void;
+   450→   450→  onSignOutAll: () => void;
+   451→   451→}) {
+   452→   452→  return (
+   453→   453→    <div className="space-y-6">
+   454→   454→      {/* Change Password */}
+   455→   455→      <Card className="border-sonic-border shadow-sm">
+   456→   456→        <CardHeader>
+   457→   457→          <CardTitle className="text-lg">Change Password</CardTitle>
+   458→   458→          <CardDescription>
+   459→   459→            Update your password to keep your account secure
+   460→   460→          </CardDescription>
+   461→   461→        </CardHeader>
+   462→   462→        <CardContent className="space-y-4">
+   463→   463→          <div className="space-y-2">
+   464→   464→            <Label htmlFor="current-password" className="text-sm font-medium text-sonic-text">
+   465→   465→              Current Password
+   466→   466→            </Label>
+   467→   467→            <Input
+   468→   468→              id="current-password"
+   469→   469→              type="password"
+   470→   470→              value={currentPassword}
+   471→   471→              onChange={(e) => setCurrentPassword(e.target.value)}
+   472→   472→              placeholder="Enter current password"
+   473→   473→              className="border-sonic-border max-w-md"
+   474→   474→            />
+   475→   475→          </div>
+   476→   476→          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl">
+   477→   477→            <div className="space-y-2">
+   478→   478→              <Label htmlFor="new-password" className="text-sm font-medium text-sonic-text">
+   479→   479→                New Password
+   480→   480→              </Label>
+   481→   481→              <Input
+   482→   482→                id="new-password"
+   483→   483→                type="password"
+   484→   484→                value={newPassword}
+   485→   485→                onChange={(e) => setNewPassword(e.target.value)}
+   486→   486→                placeholder="Enter new password"
+   487→   487→                className="border-sonic-border"
+   488→   488→              />
+   489→   489→            </div>
+   490→   490→            <div className="space-y-2">
+   491→   491→              <Label htmlFor="confirm-password" className="text-sm font-medium text-sonic-text">
+   492→   492→                Confirm New Password
+   493→   493→              </Label>
+   494→   494→              <Input
+   495→   495→                id="confirm-password"
+   496→   496→                type="password"
+   497→   497→                value={confirmPassword}
+   498→   498→                onChange={(e) => setConfirmPassword(e.target.value)}
+   499→   499→                placeholder="Confirm new password"
+   500→   500→                className="border-sonic-border"
+   501→   501→              />
+   502→   502→            </div>
+   503→   503→          </div>
+   504→   504→          <div className="flex justify-end pt-2">
+   505→   505→            <Button
+   506→   506→              onClick={onChangePassword}
+   507→   507→              variant="outline"
+   508→   508→              className="border-sonic-border"
+   509→   509→            >
+   510→   510→              Update Password
+   511→   511→            </Button>
+   512→   512→          </div>
+   513→   513→        </CardContent>
+   514→   514→      </Card>
+   515→   515→
+   516→   516→      {/* Two-Factor Authentication */}
+   517→   517→      <Card className="border-sonic-border shadow-sm">
+   518→   518→        <CardHeader>
+   519→   519→          <CardTitle className="text-lg">Two-Factor Authentication</CardTitle>
+   520→   520→          <CardDescription>
+   521→   521→            Add an extra layer of security to your account
+   522→   522→          </CardDescription>
+   523→   523→        </CardHeader>
+   524→   524→        <CardContent>
+   525→   525→          <div className="flex items-center justify-between">
+   526→   526→            <div className="flex items-center gap-3">
+   527→   527→              <div
+   528→   528→                className={cn(
+   529→   529→                  'flex items-center justify-center size-10 rounded-lg',
+   530→   530→                  twoFactorEnabled ? 'bg-emerald-50' : 'bg-muted/50'
+   531→   531→                )}
+   532→   532→              >
+   533→   533→                <Shield
+   534→   534→                  className={cn(
+   535→   535→                    'size-5',
+   536→   536→                    twoFactorEnabled ? 'text-emerald-500' : 'text-sonic-text-secondary'
+   537→   537→                  )}
+   538→   538→                />
+   539→   539→              </div>
+   540→   540→              <div>
+   541→   541→                <p className="text-sm font-medium text-sonic-text">
+   542→   542→                  Authenticator App
+   543→   543→                </p>
+   544→   544→                <p className="text-xs text-sonic-text-secondary">
+   545→   545→                  {twoFactorEnabled
+   546→   546→                    ? 'Two-factor authentication is enabled'
+   547→   547→                    : 'Use an authenticator app for verification codes'}
+   548→   548→                </p>
+   549→   549→              </div>
+   550→   550→            </div>
+   551→   551→            <Switch
+   552→   552→              checked={twoFactorEnabled}
+   553→   553→              onCheckedChange={onToggle2FA}
+   554→   554→            />
+   555→   555→          </div>
+   556→   556→        </CardContent>
+   557→   557→      </Card>
+   558→   558→
+   559→   559→      {/* Active Sessions */}
+   560→   560→      <Card className="border-sonic-border shadow-sm">
+   561→   561→        <CardHeader>
+   562→   562→          <CardTitle className="text-lg">Active Sessions</CardTitle>
+   563→   563→          <CardDescription>
+   564→   564→            Manage your active sessions across devices
+   565→   565→          </CardDescription>
+   566→   566→        </CardHeader>
+   567→   567→        <CardContent className="space-y-4">
+   568→   568→          {mockSessions.map((session, index) => (
+   569→   569→            <div key={session.id}>
+   570→   570→              <div className="flex items-center justify-between">
+   571→   571→                <div className="flex items-center gap-3">
+   572→   572→                  <div className="flex items-center justify-center size-9 rounded-lg bg-muted/50">
+   573→   573→                    {session.device.includes('iPhone') ? (
+   574→   574→                      <Smartphone className="size-4 text-sonic-text-secondary" />
+   575→   575→                    ) : (
+   576→   576→                      <Monitor className="size-4 text-sonic-text-secondary" />
+   577→   577→                    )}
+   578→   578→                  </div>
+   579→   579→                  <div>
+   580→   580→                    <p className="text-sm font-medium text-sonic-text">
+   581→   581→                      {session.device}
+   582→   582→                      {session.current && (
+   583→   583→                        <span className="ml-2 text-xs font-medium text-sonic-success bg-emerald-50 px-1.5 py-0.5 rounded">
+   584→   584→                          Current
+   585→   585→                        </span>
+   586→   586→                      )}
+   587→   587→                    </p>
+   588→   588→                    <p className="text-xs text-sonic-text-secondary">
+   589→   589→                      {session.location} · {session.lastActive}
+   590→   590→                    </p>
+   591→   591→                  </div>
+   592→   592→                </div>
+   593→   593→              </div>
+   594→   594→              {index < mockSessions.length - 1 && (
+   595→   595→                <Separator className="mt-4 bg-sonic-border" />
+   596→   596→              )}
+   597→   597→            </div>
+   598→   598→          ))}
+   599→   599→          <div className="pt-2">
+   600→   600→            <Button
+   601→   601→              variant="outline"
+   602→   602→              className="border-sonic-border text-sonic-danger hover:text-sonic-danger hover:bg-red-50"
+   603→   603→              onClick={onSignOutAll}
+   604→   604→            >
+   605→   605→              <LogOut className="size-4" />
+   606→   606→              Sign Out of All Devices
+   607→   607→            </Button>
+   608→   608→          </div>
+   609→   609→        </CardContent>
+   610→   610→      </Card>
+   611→   611→    </div>
+   612→   612→  );
+   613→   613→}
+   614→   614→
+   615→   615→// ─── Notifications Section ────────────────────────────────────────────────
+   616→   616→
+   617→   617→function NotificationsSection({
+   618→   618→  notifications,
+   619→   619→  updateNotification,
+   620→   620→  onSave,
+   621→   621→}: {
+   622→   622→  notifications: NotificationSettings;
+   623→   623→  updateNotification: (key: keyof NotificationSettings, value: boolean) => void;
+   624→   624→  onSave: () => void;
+   625→   625→}) {
+   626→   626→  const toggles: { key: keyof NotificationSettings; label: string; description: string }[] = [
+   627→   627→    {
+   628→   628→      key: 'emailOnSignature',
+   629→   629→      label: 'Document Signed',
+   630→   630→      description: 'Receive an email when a document is signed by a recipient',
+   631→   631→    },
+   632→   632→    {
+   633→   633→      key: 'emailOnRejection',
+   634→   634→      label: 'Document Rejected',
+   635→   635→      description: 'Receive an email when a document is rejected by a recipient',
+   636→   636→    },
+   637→   637→    {
+   638→   638→      key: 'emailOnExpiry',
+   639→   639→      label: 'Signature Request Expired',
+   640→   640→      description: 'Receive an email when a signature request expires',
+   641→   641→    },
+   642→   642→    {
+   643→   643→      key: 'weeklyDigest',
+   644→   644→      label: 'Weekly Digest',
+   645→   645→      description: 'Get a weekly summary of all your document activity',
+   646→   646→    },
+   647→   647→  ];
+   648→   648→
+   649→   649→  return (
+   650→   650→    <Card className="border-sonic-border shadow-sm">
+   651→   651→      <CardHeader>
+   652→   652→        <CardTitle className="text-lg">Email Notifications</CardTitle>
+   653→   653→        <CardDescription>
+   654→   654→          Choose which email notifications you want to receive
+   655→   655→        </CardDescription>
+   656→   656→      </CardHeader>
+   657→   657→      <CardContent className="space-y-1">
+   658→   658→        {toggles.map((toggle, index) => (
+   659→   659→          <div key={toggle.key}>
+   660→   660→            <div className="flex items-center justify-between py-3">
+   661→   661→              <div className="pr-4">
+   662→   662→                <p className="text-sm font-medium text-sonic-text">
+   663→   663→                  {toggle.label}
+   664→   664→                </p>
+   665→   665→                <p className="text-xs text-sonic-text-secondary mt-0.5">
+   666→   666→                  {toggle.description}
+   667→   667→                </p>
+   668→   668→              </div>
+   669→   669→              <Switch
+   670→   670→                checked={notifications[toggle.key]}
+   671→   671→                onCheckedChange={(checked) =>
+   672→   672→                  updateNotification(toggle.key, checked)
+   673→   673→                }
+   674→   674→              />
+   675→   675→            </div>
+   676→   676→            {index < toggles.length - 1 && (
+   677→   677→              <Separator className="bg-sonic-border" />
+   678→   678→            )}
+   679→   679→          </div>
+   680→   680→        ))}
+   681→   681→        <div className="flex justify-end pt-4">
+   682→   682→          <Button
+   683→   683→            onClick={onSave}
+   684→   684→            className="bg-sonic-primary hover:bg-sonic-primary/90 text-white"
+   685→   685→          >
+   686→   686→            <Save className="size-4" />
+   687→   687→            Save Preferences
+   688→   688→          </Button>
+   689→   689→        </div>
+   690→   690→      </CardContent>
+   691→   691→    </Card>
+   692→   692→  );
+   693→   693→}
+   694→   694→
+   695→   695→// ─── Appearance Section ───────────────────────────────────────────────────
+   696→   696→
+   697→   697→function AppearanceSection({
+   698→   698→  appearance,
+   699→   699→  setAppearance,
+   700→   700→  onSave,
+   701→   701→}: {
+   702→   702→  appearance: AppearanceSettings;
+   703→   703→  setAppearance: React.Dispatch<React.SetStateAction<AppearanceSettings>>;
+   704→   704→  onSave: () => void;
+   705→   705→}) {
+   706→   706→  const themeOptions: { value: 'light' | 'dark' | 'system'; label: string; icon: React.ElementType }[] = [
+   707→   707→    { value: 'light', label: 'Light', icon: Sun },
+   708→   708→    { value: 'dark', label: 'Dark', icon: Moon },
+   709→   709→    { value: 'system', label: 'System', icon: Monitor },
+   710→   710→  ];
+   711→   711→
+   712→   712→  const fontSizeOptions: { value: 'small' | 'medium' | 'large'; label: string }[] = [
+   713→   713→    { value: 'small', label: 'Small' },
+   714→   714→    { value: 'medium', label: 'Medium' },
+   715→   715→    { value: 'large', label: 'Large' },
+   716→   716→  ];
+   717→   717→
+   718→   718→  return (
+   719→   719→    <div className="space-y-6">
+   720→   720→      {/* Theme Selector */}
+   721→   721→      <Card className="border-sonic-border shadow-sm">
+   722→   722→        <CardHeader>
+   723→   723→          <CardTitle className="text-lg">Theme</CardTitle>
+   724→   724→          <CardDescription>
+   725→   725→            Choose how SonicSign looks on your device
+   726→   726→          </CardDescription>
+   727→   727→        </CardHeader>
+   728→   728→        <CardContent>
+   729→   729→          <div className="grid grid-cols-3 gap-3 max-w-sm">
+   730→   730→            {themeOptions.map((option) => {
+   731→   731→              const Icon = option.icon;
+   732→   732→              const isSelected = appearance.theme === option.value;
+   733→   733→              return (
+   734→   734→                <button
+   735→   735→                  key={option.value}
+   736→   736→                  onClick={() =>
+   737→   737→                    setAppearance((prev) => ({ ...prev, theme: option.value }))
+   738→   738→                  }
+   739→   739→                  className={cn(
+   740→   740→                    'flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all',
+   741→   741→                    isSelected
+   742→   742→                      ? 'border-sonic-primary bg-sonic-secondary'
+   743→   743→                      : 'border-sonic-border hover:border-sonic-primary/30 hover:bg-muted/30'
+   744→   744→                  )}
+   745→   745→                >
+   746→   746→                  <div
+   747→   747→                    className={cn(
+   748→   748→                      'flex items-center justify-center size-10 rounded-lg transition-colors',
+   749→   749→                      isSelected ? 'bg-sonic-primary/10' : 'bg-muted/50'
+   750→   750→                    )}
+   751→   751→                  >
+   752→   752→                    <Icon
+   753→   753→                      className={cn(
+   754→   754→                        'size-5',
+   755→   755→                        isSelected ? 'text-sonic-primary' : 'text-sonic-text-secondary'
+   756→   756→                      )}
+   757→   757→                    />
+   758→   758→                  </div>
+   759→   759→                  <span
+   760→   760→                    className={cn(
+   761→   761→                      'text-sm font-medium',
+   762→   762→                      isSelected ? 'text-sonic-primary' : 'text-sonic-text'
+   763→   763→                    )}
+   764→   764→                  >
+   765→   765→                    {option.label}
+   766→   766→                  </span>
+   767→   767→                </button>
+   768→   768→              );
+   769→   769→            })}
+   770→   770→          </div>
+   771→   771→        </CardContent>
+   772→   772→      </Card>
+   773→   773→
+   774→   774→      {/* Display Options */}
+   775→   775→      <Card className="border-sonic-border shadow-sm">
+   776→   776→        <CardHeader>
+   777→   777→          <CardTitle className="text-lg">Display</CardTitle>
+   778→   778→          <CardDescription>
+   779→   779→            Customize the display and readability settings
+   780→   780→          </CardDescription>
+   781→   781→        </CardHeader>
+   782→   782→        <CardContent className="space-y-6">
+   783→   783→          {/* Compact Mode */}
+   784→   784→          <div className="flex items-center justify-between">
+   785→   785→            <div>
+   786→   786→              <p className="text-sm font-medium text-sonic-text">
+   787→   787→                Compact Mode
+   788→   788→              </p>
+   789→   789→              <p className="text-xs text-sonic-text-secondary mt-0.5">
+   790→   790→                Reduce padding and spacing for denser layouts
+   791→   791→              </p>
+   792→   792→            </div>
+   793→   793→            <Switch
+   794→   794→              checked={appearance.compactMode}
+   795→   795→              onCheckedChange={(checked) =>
+   796→   796→                setAppearance((prev) => ({ ...prev, compactMode: checked }))
+   797→   797→              }
+   798→   798→            />
+   799→   799→          </div>
+   800→   800→
+   801→   801→          <Separator className="bg-sonic-border" />
+   802→   802→
+   803→   803→          {/* Font Size */}
+   804→   804→          <div className="space-y-3">
+   805→   805→            <Label className="text-sm font-medium text-sonic-text">
+   806→   806→              Font Size
+   807→   807→            </Label>
+   808→   808→            <RadioGroup
+   809→   809→              value={appearance.fontSize}
+   810→   810→              onValueChange={(value) =>
+   811→   811→                setAppearance((prev) => ({
+   812→   812→                  ...prev,
+   813→   813→                  fontSize: value as 'small' | 'medium' | 'large',
+   814→   814→                }))
+   815→   815→              }
+   816→   816→              className="flex gap-2"
+   817→   817→            >
+   818→   818→              {fontSizeOptions.map((option) => (
+   819→   819→                <label
+   820→   820→                  key={option.value}
+   821→   821→                  className={cn(
+   822→   822→                    'flex items-center gap-2 px-4 py-2 rounded-lg border cursor-pointer transition-all',
+   823→   823→                    appearance.fontSize === option.value
+   824→   824→                      ? 'border-sonic-primary bg-sonic-secondary'
+   825→   825→                      : 'border-sonic-border hover:border-sonic-primary/30'
+   826→   826→                  )}
+   827→   827→                >
+   828→   828→                  <RadioGroupItem value={option.value} className="sr-only" />
+   829→   829→                  <span
+   830→   830→                    className={cn(
+   831→   831→                      'text-sm font-medium',
+   832→   832→                      appearance.fontSize === option.value
+   833→   833→                        ? 'text-sonic-primary'
+   834→   834→                        : 'text-sonic-text'
+   835→   835→                    )}
+   836→   836→                    style={
+   837→   837→                      option.value === 'small'
+   838→   838→                        ? { fontSize: '12px' }
+   839→   839→                        : option.value === 'large'
+   840→   840→                          ? { fontSize: '16px' }
+   841→   841→                          : { fontSize: '14px' }
+   842→   842→                    }
+   843→   843→                  >
+   844→   844→                    {option.label}
+   845→   845→                  </span>
+   846→   846→                </label>
+   847→   847→              ))}
+   848→   848→            </RadioGroup>
+   849→   849→          </div>
+   850→   850→
+   851→   851→          <div className="flex justify-end pt-2">
+   852→   852→            <Button
+   853→   853→              onClick={onSave}
+   854→   854→              className="bg-sonic-primary hover:bg-sonic-primary/90 text-white"
+   855→   855→            >
+   856→   856→              <Save className="size-4" />
+   857→   857→              Save Appearance
+   858→   858→            </Button>
+   859→   859→          </div>
+   860→   860→        </CardContent>
+   861→   861→      </Card>
+   862→   862→    </div>
+   863→   863→  );
+   864→   864→}
+   865→   865→

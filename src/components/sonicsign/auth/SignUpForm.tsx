@@ -105,10 +105,10 @@ export function SignUpForm() {
         initial="hidden"
         animate="visible"
       >
-        <h2 className="text-2xl font-semibold text-[#111827] tracking-tight">
+        <h2 className="text-2xl text-page-title text-[#111827]">
           Create your account
         </h2>
-        <p className="mt-1.5 text-[#6B7280] text-sm">
+        <p className="mt-1.5 text-[#6B7280] text-sm text-body">
           Get started with SonicSign for free
         </p>
       </motion.div>
@@ -316,7 +316,7 @@ export function SignUpForm() {
             type="submit"
             disabled={isSubmitting}
             className={cn(
-              'w-full h-10 rounded-lg text-sm font-medium',
+              'w-full h-10 rounded-lg text-sm font-medium text-button',
               'bg-[#365CF5] hover:bg-[#2a4fd4]',
               'transition-all duration-200',
               'disabled:opacity-60'

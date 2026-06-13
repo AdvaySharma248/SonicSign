@@ -50,7 +50,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-[#365CF5]">
             <PenLine className="w-4 h-4 text-white" strokeWidth={2.2} />
           </div>
-          <span className="text-[#111827] text-base font-semibold tracking-tight hidden sm:inline">
+          <span className="text-[#111827] text-base font-heading tracking-tight hidden sm:inline">
             SonicSign
           </span>
         </div>
@@ -62,7 +62,7 @@ export function AppLayout({ children }: AppLayoutProps) {
               <span className="text-xs font-semibold text-[#365CF5]">AC</span>
             </div>
             <div className="hidden md:block">
-              <p className="text-sm font-medium text-[#111827] leading-tight">Alex Chen</p>
+              <p className="text-sm text-card-title text-[#111827] leading-tight">Alex Chen</p>
               <p className="text-xs text-[#6B7280] leading-tight">Admin</p>
             </div>
           </div>

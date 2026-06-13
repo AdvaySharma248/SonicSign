@@ -59,3 +59,38 @@ Stage Summary:
 - App fully functional end-to-end
 - All pages render correctly with no errors
 - Liquid fluid navbar effect confirmed working
+
+---
+Task ID: 4
+Agent: Main
+Task: Implement SonicSign typography system (Plus Jakarta Sans + Clash Display)
+
+Work Log:
+- Set up Plus Jakarta Sans via `next/font/google` in layout.tsx (weights 400-800)
+- Set up Clash Display via fontshare.com CDN (not available on Google Fonts)
+- Defined complete typography system in globals.css with CSS utility classes:
+  - `text-page-title`: Clash Display, weight 700, tracking -0.025em (page/hero headings)
+  - `text-section-title`: Clash Display, weight 600, tracking -0.015em (card/section headings)
+  - `text-metric`: Plus Jakarta Sans, weight 700, tabular-nums, tracking -0.03em (stat numbers)
+  - `text-nav`: Plus Jakarta Sans, weight 500 (navigation)
+  - `text-button`: Plus Jakarta Sans, weight 600 (buttons)
+  - `text-body`: Plus Jakarta Sans, weight 400 (body text)
+  - `text-body-medium`: Plus Jakarta Sans, weight 500 (emphasized body)
+  - `text-label`: Plus Jakarta Sans, weight 500, size 0.75rem (small labels)
+  - `text-card-title`: Plus Jakarta Sans, weight 500, tracking -0.005em (item/document names)
+  - `text-mono-value`: JetBrains Mono, weight 500 (IP addresses, IDs)
+  - `font-heading`: font-family shorthand for Clash Display
+- Applied typography classes across ALL 13 component files
+- Updated Navbar to use `text-nav`, MobileNav labels to use `text-label`
+- Fixed critical bug: tailwind-merge was stripping custom `text-*` typography classes as font-size conflicts
+  - Extended twMerge config in utils.ts to register all 10 custom typography prefixes
+  - This prevented classes like `text-section-title` from being removed when combined with `text-base`
+
+Stage Summary:
+- Typography system fully implemented with Plus Jakarta Sans + Clash Display
+- All page titles use Clash Display (distinctive heading font)
+- All UI text uses Plus Jakarta Sans (friendly, modern, readable)
+- Metrics use tabular numbers for clean dashboard alignment
+- IP addresses use JetBrains Mono monospace
+- Critical tailwind-merge bug fixed
+- Agent-browser verified: all fonts render correctly across all pages

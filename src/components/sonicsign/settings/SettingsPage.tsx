@@ -169,10 +169,10 @@ export default function SettingsPage() {
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="px-1 mb-6">
-        <h1 className="text-2xl font-semibold text-sonic-text tracking-tight">
+        <h1 className="text-2xl text-page-title text-sonic-text">
           Settings
         </h1>
-        <p className="text-sm text-sonic-text-secondary mt-1">
+        <p className="text-sm text-body text-sonic-text-secondary mt-1">
           Manage your account preferences and configuration
         </p>
       </div>
@@ -336,7 +336,7 @@ function ProfileSection({
   return (
     <Card className="border-sonic-border shadow-sm">
       <CardHeader>
-        <CardTitle className="text-lg">Profile Information</CardTitle>
+        <CardTitle className="text-lg text-section-title">Profile Information</CardTitle>
         <CardDescription>
           Update your personal information and organization details
         </CardDescription>
@@ -365,7 +365,7 @@ function ProfileSection({
         {/* Form Fields */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="profile-name" className="text-sm font-medium text-sonic-text">
+            <Label htmlFor="profile-name" className="text-label text-sonic-text">
               Full Name
             </Label>
             <Input
@@ -376,7 +376,7 @@ function ProfileSection({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="profile-email" className="text-sm font-medium text-sonic-text">
+            <Label htmlFor="profile-email" className="text-label text-sonic-text">
               Email
             </Label>
             <Input
@@ -390,7 +390,7 @@ function ProfileSection({
             </p>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="profile-org" className="text-sm font-medium text-sonic-text">
+            <Label htmlFor="profile-org" className="text-label text-sonic-text">
               Organization
             </Label>
             <Input
@@ -401,7 +401,7 @@ function ProfileSection({
             />
           </div>
           <div className="space-y-2">
-            <Label className="text-sm font-medium text-sonic-text">Role</Label>
+            <Label className="text-label text-sonic-text">Role</Label>
             <Input
               value={mockUser.role.charAt(0).toUpperCase() + mockUser.role.slice(1)}
               disabled
@@ -413,7 +413,7 @@ function ProfileSection({
         <div className="flex justify-end pt-2">
           <Button
             onClick={onSave}
-            className="bg-sonic-primary hover:bg-sonic-primary/90 text-white"
+            className="bg-sonic-primary hover:bg-sonic-primary/90 text-white text-button"
           >
             <Save className="size-4" />
             Save Changes
@@ -454,14 +454,14 @@ function SecuritySection({
       {/* Change Password */}
       <Card className="border-sonic-border shadow-sm">
         <CardHeader>
-          <CardTitle className="text-lg">Change Password</CardTitle>
+          <CardTitle className="text-lg text-section-title">Change Password</CardTitle>
           <CardDescription>
             Update your password to keep your account secure
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="current-password" className="text-sm font-medium text-sonic-text">
+            <Label htmlFor="current-password" className="text-label text-sonic-text">
               Current Password
             </Label>
             <Input
@@ -475,7 +475,7 @@ function SecuritySection({
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl">
             <div className="space-y-2">
-              <Label htmlFor="new-password" className="text-sm font-medium text-sonic-text">
+              <Label htmlFor="new-password" className="text-label text-sonic-text">
                 New Password
               </Label>
               <Input
@@ -488,7 +488,7 @@ function SecuritySection({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirm-password" className="text-sm font-medium text-sonic-text">
+              <Label htmlFor="confirm-password" className="text-label text-sonic-text">
                 Confirm New Password
               </Label>
               <Input
@@ -505,7 +505,7 @@ function SecuritySection({
             <Button
               onClick={onChangePassword}
               variant="outline"
-              className="border-sonic-border"
+              className="border-sonic-border text-button"
             >
               Update Password
             </Button>
@@ -516,7 +516,7 @@ function SecuritySection({
       {/* Two-Factor Authentication */}
       <Card className="border-sonic-border shadow-sm">
         <CardHeader>
-          <CardTitle className="text-lg">Two-Factor Authentication</CardTitle>
+          <CardTitle className="text-lg text-section-title">Two-Factor Authentication</CardTitle>
           <CardDescription>
             Add an extra layer of security to your account
           </CardDescription>
@@ -559,7 +559,7 @@ function SecuritySection({
       {/* Active Sessions */}
       <Card className="border-sonic-border shadow-sm">
         <CardHeader>
-          <CardTitle className="text-lg">Active Sessions</CardTitle>
+          <CardTitle className="text-lg text-section-title">Active Sessions</CardTitle>
           <CardDescription>
             Manage your active sessions across devices
           </CardDescription>
@@ -599,7 +599,7 @@ function SecuritySection({
           <div className="pt-2">
             <Button
               variant="outline"
-              className="border-sonic-border text-sonic-danger hover:text-sonic-danger hover:bg-red-50"
+              className="border-sonic-border text-sonic-danger hover:text-sonic-danger hover:bg-red-50 text-button"
               onClick={onSignOutAll}
             >
               <LogOut className="size-4" />
@@ -649,7 +649,7 @@ function NotificationsSection({
   return (
     <Card className="border-sonic-border shadow-sm">
       <CardHeader>
-        <CardTitle className="text-lg">Email Notifications</CardTitle>
+        <CardTitle className="text-lg text-section-title">Email Notifications</CardTitle>
         <CardDescription>
           Choose which email notifications you want to receive
         </CardDescription>
@@ -681,7 +681,7 @@ function NotificationsSection({
         <div className="flex justify-end pt-4">
           <Button
             onClick={onSave}
-            className="bg-sonic-primary hover:bg-sonic-primary/90 text-white"
+            className="bg-sonic-primary hover:bg-sonic-primary/90 text-white text-button"
           >
             <Save className="size-4" />
             Save Preferences
@@ -720,7 +720,7 @@ function AppearanceSection({
       {/* Theme Selector */}
       <Card className="border-sonic-border shadow-sm">
         <CardHeader>
-          <CardTitle className="text-lg">Theme</CardTitle>
+          <CardTitle className="text-lg text-section-title">Theme</CardTitle>
           <CardDescription>
             Choose how SonicSign looks on your device
           </CardDescription>
@@ -774,7 +774,7 @@ function AppearanceSection({
       {/* Display Options */}
       <Card className="border-sonic-border shadow-sm">
         <CardHeader>
-          <CardTitle className="text-lg">Display</CardTitle>
+          <CardTitle className="text-lg text-section-title">Display</CardTitle>
           <CardDescription>
             Customize the display and readability settings
           </CardDescription>
@@ -802,7 +802,7 @@ function AppearanceSection({
 
           {/* Font Size */}
           <div className="space-y-3">
-            <Label className="text-sm font-medium text-sonic-text">
+            <Label className="text-label text-sonic-text">
               Font Size
             </Label>
             <RadioGroup
@@ -851,7 +851,7 @@ function AppearanceSection({
           <div className="flex justify-end pt-2">
             <Button
               onClick={onSave}
-              className="bg-sonic-primary hover:bg-sonic-primary/90 text-white"
+              className="bg-sonic-primary hover:bg-sonic-primary/90 text-white text-button"
             >
               <Save className="size-4" />
               Save Appearance

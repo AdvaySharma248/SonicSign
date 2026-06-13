@@ -67,19 +67,19 @@ export function AuthLayout({ children, authViewKey }: AuthLayoutProps) {
             <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-white/15">
               <PenLine className="w-5 h-5 text-white" strokeWidth={2.2} />
             </div>
-            <span className="text-white text-lg font-semibold tracking-tight">
+            <span className="text-white text-lg font-heading">
               SonicSign
             </span>
           </div>
 
           {/* Tagline + decorative elements */}
           <div className="flex-1 flex flex-col justify-center">
-            <h1 className="text-white text-4xl xl:text-5xl font-bold leading-[1.1] tracking-tight">
+            <h1 className="text-white text-4xl xl:text-5xl text-page-title leading-[1.1]">
               Sign documents
               <br />
               with confidence
             </h1>
-            <p className="mt-6 text-white/70 text-base leading-relaxed max-w-[340px]">
+            <p className="mt-6 text-white/70 text-base leading-relaxed text-body max-w-[340px]">
               The modern way to send, sign, and manage documents securely. Trusted by teams worldwide.
             </p>
 
@@ -100,7 +100,7 @@ export function AuthLayout({ children, authViewKey }: AuthLayoutProps) {
           {/* Bottom testimonial */}
           <div className="relative">
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
-              <p className="text-white/90 text-sm leading-relaxed font-light">
+              <p className="text-white/90 text-sm leading-relaxed font-light text-body">
                 &ldquo;SonicSign transformed our contract workflow. What used to take days now takes minutes.&rdquo;
               </p>
               <div className="mt-4 flex items-center gap-3">
@@ -129,7 +129,7 @@ export function AuthLayout({ children, authViewKey }: AuthLayoutProps) {
           <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-[#365CF5]">
             <PenLine className="w-4 h-4 text-white" strokeWidth={2.2} />
           </div>
-          <span className="text-[#111827] text-base font-semibold tracking-tight">
+          <span className="text-[#111827] text-base font-heading">
             SonicSign
           </span>
         </div>

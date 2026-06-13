@@ -44,7 +44,7 @@ export function EmptyState({
       {/* Title */}
       <h3
         className={cn(
-          'text-base font-semibold text-[#111827] mb-1.5'
+          'text-base text-section-title text-[#111827] mb-1.5'
         )}
       >
         {title}
@@ -53,7 +53,7 @@ export function EmptyState({
       {/* Description */}
       <p
         className={cn(
-          'text-sm text-[#6B7280] max-w-xs leading-relaxed mb-6'
+          'text-sm text-body text-[#6B7280] max-w-xs leading-relaxed mb-6'
         )}
       >
         {description}
@@ -66,7 +66,7 @@ export function EmptyState({
           className={cn(
             'h-9 px-5 rounded-xl',
             'bg-[#365CF5] hover:bg-[#2B50E6]',
-            'text-white text-sm font-medium',
+            'text-white text-sm text-button',
             'transition-colors duration-150'
           )}
         >

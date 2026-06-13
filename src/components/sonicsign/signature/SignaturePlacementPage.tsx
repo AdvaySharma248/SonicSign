@@ -333,7 +333,7 @@ export default function SignaturePlacementPage() {
     return (
       <div className="flex h-full items-center justify-center">
         <div className="text-center">
-          <p className="text-lg font-medium text-sonic-text">
+          <p className="text-lg text-card-title text-sonic-text">
             No document selected
           </p>
           <Button
@@ -372,7 +372,7 @@ export default function SignaturePlacementPage() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div className="min-w-0">
-            <h1 className="truncate text-base font-semibold text-sonic-text sm:text-lg">
+            <h1 className="truncate text-base text-page-title text-sonic-text sm:text-lg">
               {document.name}
             </h1>
             <p className="text-xs text-sonic-text-secondary">
@@ -391,7 +391,7 @@ export default function SignaturePlacementPage() {
           <Button
             onClick={handleSendRequest}
             disabled={placements.length === 0}
-            className="bg-sonic-primary hover:bg-sonic-primary/90 text-white"
+            className="bg-sonic-primary hover:bg-sonic-primary/90 text-white text-button"
           >
             <Send className="mr-2 h-4 w-4" />
             Send Request
@@ -596,7 +596,7 @@ export default function SignaturePlacementPage() {
           <ScrollArea className="h-full max-h-64 lg:max-h-none">
             <div className="p-4 space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-sonic-text uppercase tracking-wide">
+                <h2 className="text-sm text-section-title text-sonic-text uppercase tracking-wide">
                   Signers
                 </h2>
                 <Button
@@ -674,7 +674,7 @@ export default function SignaturePlacementPage() {
                           </AvatarFallback>
                         </Avatar>
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium text-sonic-text">
+                          <p className="truncate text-sm text-card-title text-sonic-text">
                             {signer.name}
                           </p>
                           <p className="truncate text-xs text-sonic-text-secondary">
@@ -753,7 +753,7 @@ export default function SignaturePlacementPage() {
 
           {/* Summary */}
           <div className="rounded-lg border border-sonic-border bg-sonic-bg p-3 space-y-2">
-            <h4 className="text-xs font-semibold text-sonic-text-secondary uppercase tracking-wide">
+            <h4 className="text-xs text-section-title text-sonic-text-secondary uppercase tracking-wide">
               Recipients
             </h4>
             {signers

@@ -1,0 +1,967 @@
+     1→'use client';
+     2→
+     3→import React, { useState, useMemo, useCallback, useRef } from 'react';
+     4→import { motion, AnimatePresence } from 'framer-motion';
+     5→import {
+     6→  ArrowLeft,
+     7→  Send,
+     8→  X,
+     9→  Undo2,
+    10→  Trash2,
+    11→  Type,
+    12→  Calendar,
+    13→  PenTool,
+    14→  Hash,
+    15→  ChevronLeft,
+    16→  ChevronRight,
+    17→  Plus,
+    18→  User,
+    19→  GripVertical,
+    20→  ZoomIn,
+    21→  ZoomOut,
+    22→} from 'lucide-react';
+    23→import { useAppStore } from '@/store/useAppStore';
+    24→import { mockDocuments } from '@/data/mock';
+    25→import { cn } from '@/lib/utils';
+    26→import { Button } from '@/components/ui/button';
+    27→import { Badge } from '@/components/ui/badge';
+    28→import { Separator } from '@/components/ui/separator';
+    29→import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+    30→import { ScrollArea } from '@/components/ui/scroll-area';
+    31→import { Input } from '@/components/ui/input';
+    32→import {
+    33→  Select,
+    34→  SelectContent,
+    35→  SelectItem,
+    36→  SelectTrigger,
+    37→  SelectValue,
+    38→} from '@/components/ui/select';
+    39→import {
+    40→  Dialog,
+    41→  DialogContent,
+    42→  DialogDescription,
+    43→  DialogFooter,
+    44→  DialogHeader,
+    45→  DialogTitle,
+    46→} from '@/components/ui/dialog';
+    47→import type { SignaturePlacement } from '@/types';
+    48→
+    49→type SignatureType = 'signature' | 'initials' | 'date' | 'text';
+    50→
+    51→const signatureTypeConfig: Record<
+    52→  SignatureType,
+    53→  { label: string; icon: React.ReactNode; shortLabel: string }
+    54→> = {
+    55→  signature: {
+    56→    label: 'Signature',
+    57→    icon: <PenTool className="h-3.5 w-3.5" />,
+    58→    shortLabel: 'Sig',
+    59→  },
+    60→  initials: {
+    61→    label: 'Initials',
+    62→    icon: <Hash className="h-3.5 w-3.5" />,
+    63→    shortLabel: 'Ini',
+    64→  },
+    65→  date: {
+    66→    label: 'Date',
+    67→    icon: <Calendar className="h-3.5 w-3.5" />,
+    68→    shortLabel: 'Date',
+    69→  },
+    70→  text: {
+    71→    label: 'Text',
+    72→    icon: <Type className="h-3.5 w-3.5" />,
+    73→    shortLabel: 'Txt',
+    74→  },
+    75→};
+    76→
+    77→const signerColors = [
+    78→  { bg: 'bg-sonic-primary/10', border: 'border-sonic-primary/40', text: 'text-sonic-primary', dot: 'bg-sonic-primary', tag: 'bg-sonic-primary' },
+    79→  { bg: 'bg-sonic-accent/10', border: 'border-sonic-accent/40', text: 'text-sonic-accent', dot: 'bg-sonic-accent', tag: 'bg-sonic-accent' },
+    80→  { bg: 'bg-sonic-warning/10', border: 'border-sonic-warning/40', text: 'text-amber-600', dot: 'bg-sonic-warning', tag: 'bg-sonic-warning' },
+    81→  { bg: 'bg-purple-100', border: 'border-purple-300', text: 'text-purple-600', dot: 'bg-purple-500', tag: 'bg-purple-500' },
+    82→  { bg: 'bg-pink-100', border: 'border-pink-300', text: 'text-pink-600', dot: 'bg-pink-500', tag: 'bg-pink-500' },
+    83→];
+    84→
+    85→interface ExtendedSigner {
+    86→  id: string;
+    87→  name: string;
+    88→  email: string;
+    89→  colorIndex: number;
+    90→}
+    91→
+    92→export default function SignaturePlacementPage() {
+    93→  const { selectedDocumentId, setSelectedDocumentId, setCurrentPage } =
+    94→    useAppStore();
+    95→
+    96→  const document = useMemo(
+    97→    () => mockDocuments.find((d) => d.id === selectedDocumentId),
+    98→    [selectedDocumentId]
+    99→  );
+   100→
+   101→  // State
+   102→  const [currentPage, setCurrentPageNum] = useState(1);
+   103→  const [zoom, setZoom] = useState(100);
+   104→  const [selectedType, setSelectedType] = useState<SignatureType>('signature');
+   105→  const [selectedSignerEmail, setSelectedSignerEmail] = useState<string>('');
+   106→  const [placements, setPlacements] = useState<SignaturePlacement[]>([]);
+   107→  const [undoStack, setUndoStack] = useState<SignaturePlacement[][]>([]);
+   108→  const [sendDialogOpen, setSendDialogOpen] = useState(false);
+   109→  const [newSignerEmail, setNewSignerEmail] = useState('');
+   110→  const [showAddSigner, setShowAddSigner] = useState(false);
+   111→  const [draggingId, setDraggingId] = useState<string | null>(null);
+   112→  const [hoveredPlacementId, setHoveredPlacementId] = useState<string | null>(null);
+   113→
+   114→  const viewerRef = useRef<HTMLDivElement>(null);
+   115→
+   116→  // Build signers list from document + any added ones
+   117→  const signers: ExtendedSigner[] = useMemo(() => {
+   118→    if (!document) return [];
+   119→    const base = document.signers.map((s, i) => ({
+   120→      id: s.id,
+   121→      name: s.name,
+   122→      email: s.email,
+   123→      colorIndex: i % signerColors.length,
+   124→    }));
+   125→    return base;
+   126→  }, [document]);
+   127→
+   128→  // Set default selected signer
+   129→  React.useEffect(() => {
+   130→    if (signers.length > 0 && !selectedSignerEmail) {
+   131→      setSelectedSignerEmail(signers[0].email);
+   132→    }
+   133→  }, [signers, selectedSignerEmail]);
+   134→
+   135→  const totalPages = document?.pages || 1;
+   136→
+   137→  const getSignerColor = (email: string) => {
+   138→    const signer = signers.find((s) => s.email === email);
+   139→    const idx = signer ? signer.colorIndex : 0;
+   140→    return signerColors[idx % signerColors.length];
+   141→  };
+   142→
+   143→  const getSignerName = (email: string) => {
+   144→    const signer = signers.find((s) => s.email === email);
+   145→    return signer?.name || email;
+   146→  };
+   147→
+   148→  const getInitials = (name: string) => {
+   149→    return name
+   150→      .split(' ')
+   151→      .map((n) => n[0])
+   152→      .join('')
+   153→      .toUpperCase()
+   154→      .slice(0, 2);
+   155→  };
+   156→
+   157→  // Save to undo stack before changes
+   158→  const saveUndo = useCallback(() => {
+   159→    setUndoStack((prev) => [...prev.slice(-20), [...placements]]);
+   160→  }, [placements]);
+   161→
+   162→  const handleUndo = () => {
+   163→    if (undoStack.length === 0) return;
+   164→    const prev = undoStack[undoStack.length - 1];
+   165→    setPlacements(prev);
+   166→    setUndoStack((stack) => stack.slice(0, -1));
+   167→  };
+   168→
+   169→  const handleClearAll = () => {
+   170→    if (placements.length === 0) return;
+   171→    saveUndo();
+   172→    setPlacements([]);
+   173→  };
+   174→
+   175→  // Place a signature box at click position
+   176→  const handleDocumentClick = (e: React.MouseEvent<HTMLDivElement>) => {
+   177→    if (!viewerRef.current) return;
+   178→    if (!selectedSignerEmail) return;
+   179→
+   180→    // Don't place if clicking on an existing placement
+   181→    const target = e.target as HTMLElement;
+   182→    if (target.closest('[data-placement-id]')) return;
+   183→
+   184→    const rect = viewerRef.current.getBoundingClientRect();
+   185→    const x = ((e.clientX - rect.left) / rect.width) * 100;
+   186→    const y = ((e.clientY - rect.top) / rect.height) * 100;
+   187→
+   188→    const defaultSizes: Record<SignatureType, { w: number; h: number }> = {
+   189→      signature: { w: 25, h: 8 },
+   190→      initials: { w: 10, h: 6 },
+   191→      date: { w: 15, h: 6 },
+   192→      text: { w: 20, h: 6 },
+   193→    };
+   194→
+   195→    const size = defaultSizes[selectedType];
+   196→
+   197→    const newPlacement: SignaturePlacement = {
+   198→      id: `place_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+   199→      page: currentPage,
+   200→      x: Math.max(0, Math.min(100 - size.w, x - size.w / 2)),
+   201→      y: Math.max(0, Math.min(100 - size.h, y - size.h / 2)),
+   202→      width: size.w,
+   203→      height: size.h,
+   204→      signerEmail: selectedSignerEmail,
+   205→      signerName: getSignerName(selectedSignerEmail),
+   206→      type: selectedType,
+   207→    };
+   208→
+   209→    saveUndo();
+   210→    setPlacements((prev) => [...prev, newPlacement]);
+   211→  };
+   212→
+   213→  const handleDeletePlacement = (id: string) => {
+   214→    saveUndo();
+   215→    setPlacements((prev) => prev.filter((p) => p.id !== id));
+   216→  };
+   217→
+   218→  const handleDragPlacement = (id: string, deltaX: number, deltaY: number) => {
+   219→    setPlacements((prev) =>
+   220→      prev.map((p) => {
+   221→        if (p.id !== id) return p;
+   222→        return {
+   223→          ...p,
+   224→          x: Math.max(0, Math.min(100 - p.width, p.x + deltaX)),
+   225→          y: Math.max(0, Math.min(100 - p.height, p.y + deltaY)),
+   226→        };
+   227→      })
+   228→    );
+   229→  };
+   230→
+   231→  const handleAddSigner = () => {
+   232→    if (!newSignerEmail.trim()) return;
+   233→    // In a real app, this would add to the document's signers
+   234→    // For now we just close the form
+   235→    setShowAddSigner(false);
+   236→    setNewSignerEmail('');
+   237→  };
+   238→
+   239→  const handleSendRequest = () => {
+   240→    if (placements.length === 0) return;
+   241→    setSendDialogOpen(true);
+   242→  };
+   243→
+   244→  const confirmSend = () => {
+   245→    setSendDialogOpen(false);
+   246→    setCurrentPage('sign-requests');
+   247→  };
+   248→
+   249→  // Render simulated document page (same style as DocumentDetailsPage)
+   250→  const renderSimulatedPage = (pageNum: number) => {
+   251→    const paragraphWidths = [85, 92, 78, 95, 88, 72, 90, 83, 68, 94];
+   252→    const paragraphs = [
+   253→      { lines: 4, heading: true },
+   254→      { lines: 6, heading: false },
+   255→      { lines: 3, heading: false },
+   256→      { lines: 8, heading: false },
+   257→      { lines: 5, heading: true },
+   258→      { lines: 7, heading: false },
+   259→      { lines: 4, heading: false },
+   260→      { lines: 6, heading: false },
+   261→    ];
+   262→
+   263→    let currentY = 5;
+   264→    let paraIndex = 0;
+   265→    const elements: React.ReactNode[] = [];
+   266→
+   267→    elements.push(
+   268→      <div
+   269→        key="header"
+   270→        className="absolute bg-gray-200/60 rounded-sm"
+   271→        style={{ top: '3%', left: '8%', right: '8%', height: '1.5%' }}
+   272→      />
+   273→    );
+   274→
+   275→    for (const para of paragraphs) {
+   276→      if (currentY > 88) break;
+   277→      paraIndex = (paraIndex + 1) % paragraphWidths.length;
+   278→
+   279→      if (para.heading) {
+   280→        elements.push(
+   281→          <div
+   282→            key={`heading-${currentY}`}
+   283→            className="absolute bg-gray-400/20 rounded-sm"
+   284→            style={{
+   285→              top: `${currentY}%`,
+   286→              left: '8%',
+   287→              width: `${paragraphWidths[paraIndex] * 0.6}%`,
+   288→              height: '1.5%',
+   289→            }}
+   290→          />
+   291→        );
+   292→        currentY += 3;
+   293→      }
+   294→
+   295→      for (let i = 0; i < para.lines; i++) {
+   296→        if (currentY > 88) break;
+   297→        const widthPercent =
+   298→          i === para.lines - 1
+   299→            ? paragraphWidths[(paraIndex + i) % paragraphWidths.length] * 0.5
+   300→            : paragraphWidths[(paraIndex + i) % paragraphWidths.length];
+   301→
+   302→        elements.push(
+   303→          <div
+   304→            key={`line-${currentY}-${i}`}
+   305→            className="absolute bg-gray-300/30 rounded-sm"
+   306→            style={{
+   307→              top: `${currentY}%`,
+   308→              left: '8%',
+   309→              width: `${widthPercent}%`,
+   310→              height: '1%',
+   311→            }}
+   312→          />
+   313→        );
+   314→        currentY += 1.8;
+   315→      }
+   316→      currentY += 1.8;
+   317→    }
+   318→
+   319→    elements.push(
+   320→      <div
+   321→        key="page-num"
+   322→        className="absolute text-gray-400/60 text-[10px]"
+   323→        style={{ bottom: '4%', left: '50%', transform: 'translateX(-50%)' }}
+   324→      >
+   325→        Page {pageNum}
+   326→      </div>
+   327→    );
+   328→
+   329→    return elements;
+   330→  };
+   331→
+   332→  if (!document) {
+   333→    return (
+   334→      <div className="flex h-full items-center justify-center">
+   335→        <div className="text-center">
+   336→          <p className="text-lg font-medium text-sonic-text">
+   337→            No document selected
+   338→          </p>
+   339→          <Button
+   340→            variant="outline"
+   341→            className="mt-4"
+   342→            onClick={() => setCurrentPage('documents')}
+   343→          >
+   344→            Back to Documents
+   345→          </Button>
+   346→        </div>
+   347→      </div>
+   348→    );
+   349→  }
+   350→
+   351→  // Placements for current page
+   352→  const currentPagePlacements = placements.filter(
+   353→    (p) => p.page === currentPage
+   354→  );
+   355→
+   356→  return (
+   357→    <motion.div
+   358→      initial={{ opacity: 0, y: 6 }}
+   359→      animate={{ opacity: 1, y: 0 }}
+   360→      transition={{ duration: 0.3, ease: 'easeOut' }}
+   361→      className="flex h-full flex-col"
+   362→    >
+   363→      {/* Header */}
+   364→      <header className="flex items-center justify-between border-b border-sonic-border bg-sonic-surface px-4 py-3 sm:px-6">
+   365→        <div className="flex items-center gap-3 min-w-0">
+   366→          <Button
+   367→            variant="ghost"
+   368→            size="icon"
+   369→            className="shrink-0"
+   370→            onClick={() => setCurrentPage('document-details')}
+   371→          >
+   372→            <ArrowLeft className="h-4 w-4" />
+   373→          </Button>
+   374→          <div className="min-w-0">
+   375→            <h1 className="truncate text-base font-semibold text-sonic-text sm:text-lg">
+   376→              {document.name}
+   377→            </h1>
+   378→            <p className="text-xs text-sonic-text-secondary">
+   379→              Place signature fields for signers
+   380→            </p>
+   381→          </div>
+   382→        </div>
+   383→
+   384→        <div className="flex items-center gap-2">
+   385→          <Button
+   386→            variant="ghost"
+   387→            onClick={() => setCurrentPage('document-details')}
+   388→          >
+   389→            Cancel
+   390→          </Button>
+   391→          <Button
+   392→            onClick={handleSendRequest}
+   393→            disabled={placements.length === 0}
+   394→            className="bg-sonic-primary hover:bg-sonic-primary/90 text-white"
+   395→          >
+   396→            <Send className="mr-2 h-4 w-4" />
+   397→            Send Request
+   398→          </Button>
+   399→        </div>
+   400→      </header>
+   401→
+   402→      {/* Toolbar */}
+   403→      <div className="flex items-center gap-2 border-b border-sonic-border bg-sonic-surface px-4 py-2 flex-wrap">
+   404→        {/* Signature Type Selector */}
+   405→        <div className="flex items-center gap-1 rounded-lg border border-sonic-border p-0.5">
+   406→          {(Object.keys(signatureTypeConfig) as SignatureType[]).map((type) => {
+   407→            const config = signatureTypeConfig[type];
+   408→            return (
+   409→              <Button
+   410→                key={type}
+   411→                variant={selectedType === type ? 'default' : 'ghost'}
+   412→                size="sm"
+   413→                className={cn(
+   414→                  'h-7 gap-1.5 text-xs',
+   415→                  selectedType === type &&
+   416→                    'bg-sonic-primary text-white hover:bg-sonic-primary/90'
+   417→                )}
+   418→                onClick={() => setSelectedType(type)}
+   419→              >
+   420→                {config.icon}
+   421→                <span className="hidden sm:inline">{config.label}</span>
+   422→              </Button>
+   423→            );
+   424→          })}
+   425→        </div>
+   426→
+   427→        <Separator orientation="vertical" className="mx-1 h-6" />
+   428→
+   429→        {/* Signer Selector */}
+   430→        <Select
+   431→          value={selectedSignerEmail}
+   432→          onValueChange={setSelectedSignerEmail}
+   433→        >
+   434→          <SelectTrigger className="h-7 w-auto min-w-[140px] text-xs">
+   435→            <SelectValue placeholder="Select signer" />
+   436→          </SelectTrigger>
+   437→          <SelectContent>
+   438→            {signers.map((signer) => (
+   439→              <SelectItem key={signer.id} value={signer.email}>
+   440→                <div className="flex items-center gap-2">
+   441→                  <span
+   442→                    className={cn(
+   443→                      'h-2 w-2 rounded-full',
+   444→                      signerColors[signer.colorIndex % signerColors.length].dot
+   445→                    )}
+   446→                  />
+   447→                  {signer.name}
+   448→                </div>
+   449→              </SelectItem>
+   450→            ))}
+   451→          </SelectContent>
+   452→        </Select>
+   453→
+   454→        <Separator orientation="vertical" className="mx-1 h-6" />
+   455→
+   456→        {/* Undo / Clear */}
+   457→        <Button
+   458→          variant="ghost"
+   459→          size="sm"
+   460→          className="h-7 gap-1 text-xs"
+   461→          onClick={handleUndo}
+   462→          disabled={undoStack.length === 0}
+   463→        >
+   464→          <Undo2 className="h-3.5 w-3.5" />
+   465→          Undo
+   466→        </Button>
+   467→        <Button
+   468→          variant="ghost"
+   469→          size="sm"
+   470→          className="h-7 gap-1 text-xs text-sonic-danger hover:text-sonic-danger"
+   471→          onClick={handleClearAll}
+   472→          disabled={placements.length === 0}
+   473→        >
+   474→          <Trash2 className="h-3.5 w-3.5" />
+   475→          Clear All
+   476→        </Button>
+   477→
+   478→        <div className="flex-1" />
+   479→
+   480→        {/* Placement count */}
+   481→        <span className="text-xs text-sonic-text-secondary">
+   482→          {placements.length} field{placements.length !== 1 ? 's' : ''} placed
+   483→        </span>
+   484→      </div>
+   485→
+   486→      {/* Main Content */}
+   487→      <div className="flex flex-1 overflow-hidden flex-col lg:flex-row">
+   488→        {/* PDF Viewer Area */}
+   489→        <main className="flex flex-1 flex-col bg-sonic-bg overflow-hidden">
+   490→          {/* Zoom Controls */}
+   491→          <div className="flex items-center justify-between border-b border-sonic-border bg-sonic-surface/80 px-4 py-1.5">
+   492→            <div className="flex items-center gap-1">
+   493→              <Button
+   494→                variant="ghost"
+   495→                size="icon"
+   496→                className="h-6 w-6"
+   497→                onClick={() => setZoom(Math.max(50, zoom - 10))}
+   498→              >
+   499→                <ZoomOut className="h-3 w-3" />
+   500→              </Button>
+   501→              <span className="min-w-[2.5rem] text-center text-[11px] font-medium text-sonic-text-secondary">
+   502→                {zoom}%
+   503→              </span>
+   504→              <Button
+   505→                variant="ghost"
+   506→                size="icon"
+   507→                className="h-6 w-6"
+   508→                onClick={() => setZoom(Math.min(200, zoom + 10))}
+   509→              >
+   510→                <ZoomIn className="h-3 w-3" />
+   511→              </Button>
+   512→            </div>
+   513→            <span className="text-[11px] font-medium text-sonic-text-secondary">
+   514→              Page {currentPage} of {totalPages}
+   515→            </span>
+   516→          </div>
+   517→
+   518→          {/* Document Viewer */}
+   519→          <div className="flex-1 overflow-auto p-4 sm:p-6 scrollbar-thin">
+   520→            <div className="mx-auto flex justify-center" style={{ maxWidth: `${zoom * 6}px` }}>
+   521→              <div
+   522→                ref={viewerRef}
+   523→                className="relative bg-white shadow-lg ring-1 ring-sonic-border/50 cursor-crosshair"
+   524→                style={{
+   525→                  width: `${zoom * 6}px`,
+   526→                  height: `${zoom * 8}px`,
+   527→                  borderRadius: '2px',
+   528→                }}
+   529→                onClick={handleDocumentClick}
+   530→              >
+   531→                {/* Simulated page content */}
+   532→                {renderSimulatedPage(currentPage)}
+   533→
+   534→                {/* Signature Placements */}
+   535→                <AnimatePresence>
+   536→                  {currentPagePlacements.map((placement) => {
+   537→                    const color = getSignerColor(placement.signerEmail);
+   538→                    const typeConfig = signatureTypeConfig[placement.type];
+   539→                    const isHovered = hoveredPlacementId === placement.id;
+   540→
+   541→                    return (
+   542→                      <DraggablePlacement
+   543→                        key={placement.id}
+   544→                        placement={placement}
+   545→                        color={color}
+   546→                        typeConfig={typeConfig}
+   547→                        isHovered={isHovered}
+   548→                        onHover={setHoveredPlacementId}
+   549→                        onDelete={() => handleDeletePlacement(placement.id)}
+   550→                        onDrag={(deltaX, deltaY) =>
+   551→                          handleDragPlacement(placement.id, deltaX, deltaY)
+   552→                        }
+   553→                        onDragStart={() => setDraggingId(placement.id)}
+   554→                        onDragEnd={() => setDraggingId(null)}
+   555→                        containerRef={viewerRef}
+   556→                      />
+   557→                    );
+   558→                  })}
+   559→                </AnimatePresence>
+   560→              </div>
+   561→            </div>
+   562→          </div>
+   563→
+   564→          {/* Page Navigation */}
+   565→          <div className="flex items-center justify-center gap-3 border-t border-sonic-border bg-sonic-surface px-4 py-2">
+   566→            <Button
+   567→              variant="outline"
+   568→              size="sm"
+   569→              className="h-7"
+   570→              disabled={currentPage <= 1}
+   571→              onClick={() => setCurrentPageNum((p) => Math.max(1, p - 1))}
+   572→            >
+   573→              <ChevronLeft className="mr-1 h-3.5 w-3.5" />
+   574→              Previous
+   575→            </Button>
+   576→            <span className="text-sm font-medium text-sonic-text">
+   577→              {currentPage} / {totalPages}
+   578→            </span>
+   579→            <Button
+   580→              variant="outline"
+   581→              size="sm"
+   582→              className="h-7"
+   583→              disabled={currentPage >= totalPages}
+   584→              onClick={() =>
+   585→                setCurrentPageNum((p) => Math.min(totalPages, p + 1))
+   586→              }
+   587→            >
+   588→              Next
+   589→              <ChevronRight className="ml-1 h-3.5 w-3.5" />
+   590→            </Button>
+   591→          </div>
+   592→        </main>
+   593→
+   594→        {/* Signer Panel */}
+   595→        <aside className="w-full shrink-0 border-t border-sonic-border bg-sonic-surface lg:w-72 lg:border-t-0 lg:border-l">
+   596→          <ScrollArea className="h-full max-h-64 lg:max-h-none">
+   597→            <div className="p-4 space-y-4">
+   598→              <div className="flex items-center justify-between">
+   599→                <h2 className="text-sm font-semibold text-sonic-text uppercase tracking-wide">
+   600→                  Signers
+   601→                </h2>
+   602→                <Button
+   603→                  variant="ghost"
+   604→                  size="sm"
+   605→                  className="h-6 text-xs text-sonic-primary"
+   606→                  onClick={() => setShowAddSigner(!showAddSigner)}
+   607→                >
+   608→                  <Plus className="mr-1 h-3 w-3" />
+   609→                  Add
+   610→                </Button>
+   611→              </div>
+   612→
+   613→              {/* Add signer form */}
+   614→              <AnimatePresence>
+   615→                {showAddSigner && (
+   616→                  <motion.div
+   617→                    initial={{ height: 0, opacity: 0 }}
+   618→                    animate={{ height: 'auto', opacity: 1 }}
+   619→                    exit={{ height: 0, opacity: 0 }}
+   620→                    transition={{ duration: 0.2 }}
+   621→                    className="overflow-hidden"
+   622→                  >
+   623→                    <div className="flex gap-2">
+   624→                      <Input
+   625→                        type="email"
+   626→                        placeholder="email@example.com"
+   627→                        value={newSignerEmail}
+   628→                        onChange={(e) => setNewSignerEmail(e.target.value)}
+   629→                        className="h-7 text-xs"
+   630→                        onKeyDown={(e) => {
+   631→                          if (e.key === 'Enter') handleAddSigner();
+   632→                        }}
+   633→                      />
+   634→                      <Button
+   635→                        size="sm"
+   636→                        className="h-7 bg-sonic-primary hover:bg-sonic-primary/90 text-white text-xs shrink-0"
+   637→                        onClick={handleAddSigner}
+   638→                      >
+   639→                        Add
+   640→                      </Button>
+   641→                    </div>
+   642→                  </motion.div>
+   643→                )}
+   644→              </AnimatePresence>
+   645→
+   646→              {/* Signers list */}
+   647→              <div className="space-y-3">
+   648→                {signers.map((signer) => {
+   649→                  const color = signerColors[signer.colorIndex % signerColors.length];
+   650→                  const signerPlacements = placements.filter(
+   651→                    (p) => p.signerEmail === signer.email
+   652→                  );
+   653→
+   654→                  return (
+   655→                    <div key={signer.id} className="space-y-1.5">
+   656→                      <div
+   657→                        className={cn(
+   658→                          'flex items-center gap-2 rounded-lg border p-2.5 cursor-pointer transition-colors',
+   659→                          selectedSignerEmail === signer.email
+   660→                            ? cn(color.bg, color.border, 'border')
+   661→                            : 'border-sonic-border hover:bg-gray-50'
+   662→                        )}
+   663→                        onClick={() => setSelectedSignerEmail(signer.email)}
+   664→                      >
+   665→                        <Avatar className="h-7 w-7 shrink-0">
+   666→                          <AvatarFallback
+   667→                            className={cn(
+   668→                              color.bg,
+   669→                              color.text,
+   670→                              'text-[10px] font-medium'
+   671→                            )}
+   672→                          >
+   673→                            {getInitials(signer.name)}
+   674→                          </AvatarFallback>
+   675→                        </Avatar>
+   676→                        <div className="min-w-0 flex-1">
+   677→                          <p className="truncate text-sm font-medium text-sonic-text">
+   678→                            {signer.name}
+   679→                          </p>
+   680→                          <p className="truncate text-xs text-sonic-text-secondary">
+   681→                            {signer.email}
+   682→                          </p>
+   683→                        </div>
+   684→                        <span
+   685→                          className={cn(
+   686→                            'flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[10px] font-bold text-white',
+   687→                            color.tag
+   688→                          )}
+   689→                        >
+   690→                          {signerPlacements.length}
+   691→                        </span>
+   692→                      </div>
+   693→
+   694→                      {/* Placement list for this signer */}
+   695→                      {signerPlacements.length > 0 && (
+   696→                        <div className="ml-4 space-y-1">
+   697→                          {signerPlacements.map((p) => {
+   698→                            const typeConf = signatureTypeConfig[p.type];
+   699→                            return (
+   700→                              <div
+   701→                                key={p.id}
+   702→                                className="flex items-center justify-between rounded border border-sonic-border bg-white px-2 py-1"
+   703→                              >
+   704→                                <div className="flex items-center gap-1.5 min-w-0">
+   705→                                  <span
+   706→                                    className={cn(
+   707→                                      'h-1.5 w-1.5 rounded-full shrink-0',
+   708→                                      color.dot
+   709→                                    )}
+   710→                                  />
+   711→                                  <span className="text-[11px] text-sonic-text truncate">
+   712→                                    {typeConf.label}
+   713→                                  </span>
+   714→                                  <span className="text-[10px] text-sonic-text-secondary">
+   715→                                    p{p.page}
+   716→                                  </span>
+   717→                                </div>
+   718→                                <Button
+   719→                                  variant="ghost"
+   720→                                  size="icon"
+   721→                                  className="h-4 w-4 shrink-0 text-sonic-text-secondary hover:text-sonic-danger"
+   722→                                  onClick={() => handleDeletePlacement(p.id)}
+   723→                                >
+   724→                                  <X className="h-3 w-3" />
+   725→                                </Button>
+   726→                              </div>
+   727→                            );
+   728→                          })}
+   729→                        </div>
+   730→                      )}
+   731→                    </div>
+   732→                  );
+   733→                })}
+   734→              </div>
+   735→            </div>
+   736→          </ScrollArea>
+   737→        </aside>
+   738→      </div>
+   739→
+   740→      {/* Send Request Confirmation Dialog */}
+   741→      <Dialog open={sendDialogOpen} onOpenChange={setSendDialogOpen}>
+   742→        <DialogContent>
+   743→          <DialogHeader>
+   744→            <DialogTitle>Send Signature Request</DialogTitle>
+   745→            <DialogDescription>
+   746→              You are about to send signature requests for{' '}
+   747→              <strong>{document.name}</strong> with {placements.length} field
+   748→              {placements.length !== 1 ? 's' : ''} placed across{' '}
+   749→              {new Set(placements.map((p) => p.page)).size} page
+   750→              {new Set(placements.map((p) => p.page)).size !== 1 ? 's' : ''}.
+   751→            </DialogDescription>
+   752→          </DialogHeader>
+   753→
+   754→          {/* Summary */}
+   755→          <div className="rounded-lg border border-sonic-border bg-sonic-bg p-3 space-y-2">
+   756→            <h4 className="text-xs font-semibold text-sonic-text-secondary uppercase tracking-wide">
+   757→              Recipients
+   758→            </h4>
+   759→            {signers
+   760→              .filter((s) =>
+   761→                placements.some((p) => p.signerEmail === s.email)
+   762→              )
+   763→              .map((signer) => {
+   764→                const count = placements.filter(
+   765→                  (p) => p.signerEmail === signer.email
+   766→                ).length;
+   767→                const color = signerColors[signer.colorIndex % signerColors.length];
+   768→                return (
+   769→                  <div
+   770→                    key={signer.id}
+   771→                    className="flex items-center justify-between"
+   772→                  >
+   773→                    <div className="flex items-center gap-2">
+   774→                      <span
+   775→                        className={cn(
+   776→                          'h-2 w-2 rounded-full',
+   777→                          color.dot
+   778→                        )}
+   779→                      />
+   780→                      <span className="text-sm text-sonic-text">
+   781→                        {signer.name}
+   782→                      </span>
+   783→                    </div>
+   784→                    <span className="text-xs text-sonic-text-secondary">
+   785→                      {count} field{count !== 1 ? 's' : ''}
+   786→                    </span>
+   787→                  </div>
+   788→                );
+   789→              })}
+   790→          </div>
+   791→
+   792→          <DialogFooter>
+   793→            <Button
+   794→              variant="outline"
+   795→              onClick={() => setSendDialogOpen(false)}
+   796→            >
+   797→              Cancel
+   798→            </Button>
+   799→            <Button
+   800→              onClick={confirmSend}
+   801→              className="bg-sonic-primary hover:bg-sonic-primary/90 text-white"
+   802→            >
+   803→              <Send className="mr-2 h-4 w-4" />
+   804→              Send Requests
+   805→            </Button>
+   806→          </DialogFooter>
+   807→        </DialogContent>
+   808→      </Dialog>
+   809→    </motion.div>
+   810→  );
+   811→}
+   812→
+   813→// ============================================
+   814→// Draggable Placement Component
+   815→// ============================================
+   816→
+   817→interface DraggablePlacementProps {
+   818→  placement: SignaturePlacement;
+   819→  color: (typeof signerColors)[0];
+   820→  typeConfig: { label: string; icon: React.ReactNode; shortLabel: string };
+   821→  isHovered: boolean;
+   822→  onHover: (id: string | null) => void;
+   823→  onDelete: () => void;
+   824→  onDrag: (deltaX: number, deltaY: number) => void;
+   825→  onDragStart: () => void;
+   826→  onDragEnd: () => void;
+   827→  containerRef: React.RefObject<HTMLDivElement | null>;
+   828→}
+   829→
+   830→function DraggablePlacement({
+   831→  placement,
+   832→  color,
+   833→  typeConfig,
+   834→  isHovered,
+   835→  onHover,
+   836→  onDelete,
+   837→  onDrag,
+   838→  onDragStart,
+   839→  onDragEnd,
+   840→  containerRef,
+   841→}: DraggablePlacementProps) {
+   842→  const [isDragging, setIsDragging] = useState(false);
+   843→  const dragStart = useRef<{ x: number; y: number; placementX: number; placementY: number } | null>(null);
+   844→
+   845→  const handlePointerDown = (e: React.PointerEvent) => {
+   846→    e.stopPropagation();
+   847→    e.preventDefault();
+   848→    setIsDragging(true);
+   849→    onDragStart();
+   850→
+   851→    const container = containerRef.current;
+   852→    if (!container) return;
+   853→
+   854→    dragStart.current = {
+   855→      x: e.clientX,
+   856→      y: e.clientY,
+   857→      placementX: placement.x,
+   858→      placementY: placement.y,
+   859→    };
+   860→
+   861→    const handlePointerMove = (moveEvent: PointerEvent) => {
+   862→      if (!dragStart.current || !container) return;
+   863→      const rect = container.getBoundingClientRect();
+   864→      const deltaX =
+   865→        ((moveEvent.clientX - dragStart.current.x) / rect.width) * 100;
+   866→      const deltaY =
+   867→        ((moveEvent.clientY - dragStart.current.y) / rect.height) * 100;
+   868→
+   869→      const newX = Math.max(
+   870→        0,
+   871→        Math.min(100 - placement.width, dragStart.current.placementX + deltaX)
+   872→      );
+   873→      const newY = Math.max(
+   874→        0,
+   875→        Math.min(100 - placement.height, dragStart.current.placementY + deltaY)
+   876→      );
+   877→
+   878→      onDrag(newX - placement.x, newY - placement.y);
+   879→    };
+   880→
+   881→    const handlePointerUp = () => {
+   882→      setIsDragging(false);
+   883→      onDragEnd();
+   884→      dragStart.current = null;
+   885→      document.removeEventListener('pointermove', handlePointerMove);
+   886→      document.removeEventListener('pointerup', handlePointerUp);
+   887→    };
+   888→
+   889→    document.addEventListener('pointermove', handlePointerMove);
+   890→    document.addEventListener('pointerup', handlePointerUp);
+   891→  };
+   892→
+   893→  return (
+   894→    <motion.div
+   895→      data-placement-id={placement.id}
+   896→      initial={{ opacity: 0, scale: 0.9 }}
+   897→      animate={{ opacity: 1, scale: 1 }}
+   898→      exit={{ opacity: 0, scale: 0.9 }}
+   899→      transition={{ duration: 0.15 }}
+   900→      className={cn(
+   901→        'absolute group select-none',
+   902→        isDragging && 'z-50'
+   903→      )}
+   904→      style={{
+   905→        left: `${placement.x}%`,
+   906→        top: `${placement.y}%`,
+   907→        width: `${placement.width}%`,
+   908→        height: `${placement.height}%`,
+   909→      }}
+   910→      onMouseEnter={() => onHover(placement.id)}
+   911→      onMouseLeave={() => onHover(null)}
+   912→    >
+   913→      <div
+   914→        className={cn(
+   915→          'h-full w-full rounded border-2 border-dashed transition-all',
+   916→          color.border,
+   917→          isHovered || isDragging ? `${color.bg} border-solid` : 'bg-transparent',
+   918→          isDragging && 'shadow-lg'
+   919→        )}
+   920→      >
+   921→        {/* Drag handle + label */}
+   922→        <div
+   923→          className={cn(
+   924→            'absolute -top-5 left-0 flex items-center gap-1 rounded-t px-1.5 py-0.5 text-[9px] font-semibold text-white',
+   925→            color.tag,
+   926→            isHovered || isDragging ? 'opacity-100' : 'opacity-80'
+   927→          )}
+   928→          onPointerDown={handlePointerDown}
+   929→          style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+   930→        >
+   931→          <GripVertical className="h-2.5 w-2.5" />
+   932→          {placement.signerName.split(' ')[0]} - {typeConfig.label}
+   933→        </div>
+   934→
+   935→        {/* Center content */}
+   936→        <div className="flex h-full items-center justify-center">
+   937→          <div className={cn('flex items-center gap-1 text-[10px]', color.text, (isHovered || isDragging) ? 'opacity-100' : 'opacity-60')}>
+   938→            {typeConfig.icon}
+   939→            <span className="font-medium">{typeConfig.shortLabel}</span>
+   940→          </div>
+   941→        </div>
+   942→
+   943→        {/* Coordinates */}
+   944→        {(isHovered || isDragging) && (
+   945→          <div className="absolute -bottom-4 left-0 text-[8px] text-sonic-text-secondary font-mono">
+   946→            x:{Math.round(placement.x)} y:{Math.round(placement.y)}
+   947→          </div>
+   948→        )}
+   949→
+   950→        {/* Delete button */}
+   951→        <button
+   952→          className={cn(
+   953→            'absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-sonic-danger text-white transition-opacity',
+   954→            isHovered ? 'opacity-100' : 'opacity-0'
+   955→          )}
+   956→          onClick={(e) => {
+   957→            e.stopPropagation();
+   958→            onDelete();
+   959→          }}
+   960→        >
+   961→          <X className="h-2.5 w-2.5" />
+   962→        </button>
+   963→      </div>
+   964→    </motion.div>
+   965→  );
+   966→}
+   967→

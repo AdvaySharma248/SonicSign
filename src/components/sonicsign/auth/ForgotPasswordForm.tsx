@@ -99,10 +99,10 @@ export function ForgotPasswordForm() {
               initial="hidden"
               animate="visible"
             >
-              <h2 className="text-2xl font-semibold text-[#111827] tracking-tight">
+              <h2 className="text-2xl text-page-title text-[#111827]">
                 Reset your password
               </h2>
-              <p className="mt-1.5 text-[#6B7280] text-sm">
+              <p className="mt-1.5 text-[#6B7280] text-sm text-body">
                 Enter your email and we&apos;ll send you a reset link
               </p>
             </motion.div>
@@ -159,7 +159,7 @@ export function ForgotPasswordForm() {
                   type="submit"
                   disabled={isSubmitting}
                   className={cn(
-                    'w-full h-10 rounded-lg text-sm font-medium',
+                    'w-full h-10 rounded-lg text-sm font-medium text-button',
                     'bg-[#365CF5] hover:bg-[#2a4fd4]',
                     'transition-all duration-200',
                     'disabled:opacity-60'
@@ -189,10 +189,10 @@ export function ForgotPasswordForm() {
               <div className="mx-auto w-14 h-14 rounded-full bg-[#EEF2FF] flex items-center justify-center mb-5">
                 <Mail className="w-6 h-6 text-[#365CF5]" />
               </div>
-              <h2 className="text-2xl font-semibold text-[#111827] tracking-tight">
+              <h2 className="text-2xl text-page-title text-[#111827]">
                 Check your email
               </h2>
-              <p className="mt-2 text-[#6B7280] text-sm leading-relaxed max-w-[280px] mx-auto">
+              <p className="mt-2 text-[#6B7280] text-sm leading-relaxed text-body max-w-[280px] mx-auto">
                 We&apos;ve sent a password reset link to{' '}
                 <span className="text-[#111827] font-medium">{submittedEmail}</span>
               </p>
@@ -213,7 +213,7 @@ export function ForgotPasswordForm() {
                   onClick={() => setAuthView('sign-in')}
                   variant="outline"
                   className={cn(
-                    'h-10 rounded-lg text-sm font-medium',
+                    'h-10 rounded-lg text-sm font-medium text-button',
                     'border-[#E5E7EB] hover:bg-[#F9FAFB] hover:text-[#111827]',
                     'transition-all duration-200'
                   )}

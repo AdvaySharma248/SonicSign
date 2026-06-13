@@ -151,7 +151,7 @@ export default function DashboardPage() {
     >
       {/* ── 1. Welcome Section ─────────────────────────────────── */}
       <motion.section variants={itemVariants}>
-        <h1 className="text-2xl font-bold tracking-tight text-sonic-text sm:text-3xl">
+        <h1 className="text-page-title text-2xl text-sonic-text sm:text-3xl">
           Welcome back, Alex
         </h1>
         <p className="mt-1.5 text-sm text-sonic-text-secondary sm:text-base">
@@ -184,7 +184,7 @@ export default function DashboardPage() {
                   <stat.icon className={cn('h-5 w-5', stat.iconFg)} strokeWidth={2} />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-3xl font-bold tracking-tight text-sonic-text">
+                  <p className="text-metric text-3xl text-sonic-text">
                     {stat.value.toLocaleString()}
                   </p>
                   <p className="mt-1 text-sm text-sonic-text-secondary font-medium">
@@ -205,7 +205,7 @@ export default function DashboardPage() {
           <motion.section variants={itemVariants}>
             <Card className="rounded-2xl border-sonic-border shadow-sm">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-base font-semibold text-sonic-text">
+                <CardTitle className="text-section-title text-base text-sonic-text">
                   Recent Documents
                 </CardTitle>
                 <Button
@@ -271,7 +271,7 @@ export default function DashboardPage() {
           <motion.section variants={itemVariants}>
             <Card className="rounded-2xl border-sonic-border shadow-sm">
               <CardHeader className="pb-2">
-                <CardTitle className="text-base font-semibold text-sonic-text">
+                <CardTitle className="text-section-title text-base text-sonic-text">
                   Recent Activity
                 </CardTitle>
               </CardHeader>
@@ -320,7 +320,7 @@ export default function DashboardPage() {
           <motion.section variants={itemVariants}>
             <Card className="rounded-2xl border-sonic-border shadow-sm">
               <CardHeader className="pb-2">
-                <CardTitle className="text-base font-semibold text-sonic-text">
+                <CardTitle className="text-section-title text-base text-sonic-text">
                   Pending Signatures
                 </CardTitle>
               </CardHeader>

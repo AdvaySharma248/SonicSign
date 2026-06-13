@@ -373,7 +373,7 @@ export function MobileNav() {
                 {/* ── Label ─────────────────────────────────────────── */}
                 <motion.span
                   className={cn(
-                    'relative z-10 text-[10px] mt-0.5 font-medium leading-tight',
+                    'relative z-10 text-[10px] mt-0.5 text-label leading-tight',
                   )}
                   animate={{
                     opacity: isActive ? 1 : 0.45,

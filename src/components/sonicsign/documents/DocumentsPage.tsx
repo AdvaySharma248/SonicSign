@@ -255,10 +255,10 @@ export default function DocumentsPage() {
       <div className="flex flex-col gap-4 pb-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">
+            <h1 className="text-2xl text-page-title text-foreground">
               Documents
             </h1>
-            <p className="text-sm text-muted-foreground mt-0.5">
+            <p className="text-sm text-body text-muted-foreground mt-0.5">
               Manage and track all your documents
             </p>
           </div>
@@ -313,7 +313,7 @@ export default function DocumentsPage() {
 
             {/* Upload button */}
             <Button
-              className="rounded-xl shadow-sm"
+              className="rounded-xl shadow-sm text-button"
               onClick={() => setCurrentPage('upload')}
             >
               <Upload className="size-4" />
@@ -389,7 +389,7 @@ export default function DocumentsPage() {
                             <FileText className="size-5" />
                           </div>
                           <div className="min-w-0 flex-1">
-                            <h3 className="font-semibold text-sm text-foreground truncate leading-tight">
+                            <h3 className="text-card-title text-sm text-foreground truncate leading-tight">
                               {doc.name}
                             </h3>
                             <p className="text-xs text-muted-foreground mt-0.5">
@@ -485,7 +485,7 @@ export default function DocumentsPage() {
                   <TableRow className="hover:bg-transparent border-sonic-border">
                     <TableHead className="pl-5">
                       <button
-                        className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
+                        className="inline-flex items-center gap-1.5 text-label text-muted-foreground hover:text-foreground transition-colors"
                         onClick={() => handleSort('name')}
                       >
                         Name
@@ -494,7 +494,7 @@ export default function DocumentsPage() {
                     </TableHead>
                     <TableHead className="hidden sm:table-cell">
                       <button
-                        className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
+                        className="inline-flex items-center gap-1.5 text-label text-muted-foreground hover:text-foreground transition-colors"
                         onClick={() => handleSort('owner')}
                       >
                         Owner
@@ -503,7 +503,7 @@ export default function DocumentsPage() {
                     </TableHead>
                     <TableHead className="hidden md:table-cell">
                       <button
-                        className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
+                        className="inline-flex items-center gap-1.5 text-label text-muted-foreground hover:text-foreground transition-colors"
                         onClick={() => handleSort('date')}
                       >
                         Date
@@ -512,7 +512,7 @@ export default function DocumentsPage() {
                     </TableHead>
                     <TableHead>
                       <button
-                        className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
+                        className="inline-flex items-center gap-1.5 text-label text-muted-foreground hover:text-foreground transition-colors"
                         onClick={() => handleSort('status')}
                       >
                         Status
@@ -521,7 +521,7 @@ export default function DocumentsPage() {
                     </TableHead>
                     <TableHead className="hidden lg:table-cell">
                       <button
-                        className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
+                        className="inline-flex items-center gap-1.5 text-label text-muted-foreground hover:text-foreground transition-colors"
                         onClick={() => handleSort('pages')}
                       >
                         Pages
@@ -547,7 +547,7 @@ export default function DocumentsPage() {
                             <File className="size-4" />
                           </div>
                           <div className="min-w-0">
-                            <p className="font-medium text-sm text-foreground truncate max-w-[220px]">
+                            <p className="text-card-title text-sm text-foreground truncate max-w-[220px]">
                               {doc.name}
                             </p>
                             <p className="text-xs text-muted-foreground sm:hidden">

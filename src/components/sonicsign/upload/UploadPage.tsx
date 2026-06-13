@@ -208,10 +208,10 @@ export default function UploadPage() {
     >
       {/* Header */}
       <motion.section variants={itemVariants}>
-        <h1 className="text-2xl font-bold tracking-tight text-[#111827] sm:text-3xl">
+        <h1 className="text-2xl text-page-title text-[#111827] sm:text-3xl">
           Upload Document
         </h1>
-        <p className="mt-1.5 text-sm text-[#6B7280] sm:text-base">
+        <p className="mt-1.5 text-sm text-body text-[#6B7280] sm:text-base">
           Upload a PDF document to prepare for electronic signatures
         </p>
       </motion.section>
@@ -342,7 +342,7 @@ export default function UploadPage() {
                       <div className="min-w-0 flex-1">
                         <p
                           className={cn(
-                            'truncate text-sm font-medium',
+                            'truncate text-sm text-card-title',
                             file.status === 'error'
                               ? 'text-red-700'
                               : 'text-[#111827]'
@@ -434,14 +434,14 @@ export default function UploadPage() {
             >
               <Button
                 variant="outline"
-                className="rounded-xl border-[#E5E7EB] text-[#6B7280] hover:text-[#111827]"
+                className="rounded-xl border-[#E5E7EB] text-[#6B7280] hover:text-[#111827] text-button"
                 onClick={() => setFiles([])}
                 disabled={isUploading}
               >
                 Clear All
               </Button>
               <Button
-                className="rounded-xl bg-[#365CF5] text-white hover:bg-[#2B4FE0] gap-2"
+                className="rounded-xl bg-[#365CF5] text-white hover:bg-[#2B4FE0] gap-2 text-button"
                 onClick={() => {
                   if (completedFiles.length > 0) {
                     setSelectedDocumentId('doc_001');

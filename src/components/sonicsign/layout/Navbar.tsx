@@ -186,7 +186,7 @@ export function Navbar() {
               className={cn(
                 'relative flex items-center gap-2 px-5 py-2.5',
                 'rounded-[18px]',
-                'text-[13px] font-medium',
+                'text-[13px] text-nav',
                 'cursor-pointer select-none outline-none',
                 'transition-colors duration-300',
                 isActive

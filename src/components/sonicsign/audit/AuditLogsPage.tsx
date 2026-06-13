@@ -233,14 +233,14 @@ export default function AuditLogsPage() {
       {/* Header */}
       <div className="flex items-center justify-between px-1 mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-sonic-text tracking-tight">
+          <h1 className="text-2xl text-page-title text-sonic-text">
             Audit Logs
           </h1>
-          <p className="text-sm text-sonic-text-secondary mt-1">
+          <p className="text-sm text-body text-sonic-text-secondary mt-1">
             Track all activities and changes across your workspace
           </p>
         </div>
-        <Button variant="outline" className="border-sonic-border">
+        <Button variant="outline" className="border-sonic-border text-button">
           <DownloadCloud className="size-4" />
           Export
         </Button>
@@ -308,10 +308,10 @@ export default function AuditLogsPage() {
           <TableHeader>
             <TableRow className="hover:bg-transparent border-sonic-border">
               <TableHead className="w-8" />
-              <TableHead>Event</TableHead>
-              <TableHead>User</TableHead>
+              <TableHead className="text-label">Event</TableHead>
+              <TableHead className="text-label">User</TableHead>
               <TableHead
-                className="cursor-pointer select-none"
+                className="cursor-pointer select-none text-label"
                 onClick={toggleSort}
               >
                 <span className="inline-flex items-center gap-1">
@@ -324,8 +324,8 @@ export default function AuditLogsPage() {
                   />
                 </span>
               </TableHead>
-              <TableHead>IP Address</TableHead>
-              <TableHead>Details</TableHead>
+              <TableHead className="text-label">IP Address</TableHead>
+              <TableHead className="text-label">Details</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -354,7 +354,7 @@ export default function AuditLogsPage() {
             <div className="flex items-center justify-center size-14 rounded-2xl bg-muted/50 mb-4">
               <FileText className="size-7 text-sonic-text-secondary" />
             </div>
-            <h3 className="text-lg font-medium text-sonic-text mb-1">
+            <h3 className="text-lg text-section-title text-sonic-text mb-1">
               No logs found
             </h3>
             <p className="text-sm text-sonic-text-secondary text-center max-w-sm">
@@ -374,7 +374,7 @@ export default function AuditLogsPage() {
             variant="outline"
             size="sm"
             onClick={() => setVisibleCount((prev) => prev + ITEMS_PER_PAGE)}
-            className="border-sonic-border"
+            className="border-sonic-border text-button"
           >
             Load More
           </Button>
@@ -469,7 +469,7 @@ function LogRow({
           </Tooltip>
         </TableCell>
         <TableCell className="py-3">
-          <code className="text-xs font-mono text-sonic-text-secondary bg-muted/50 px-1.5 py-0.5 rounded">
+          <code className="text-xs text-mono-value text-sonic-text-secondary bg-muted/50 px-1.5 py-0.5 rounded">
             {log.ipAddress}
           </code>
         </TableCell>
@@ -489,31 +489,31 @@ function LogRow({
           <TableCell colSpan={6} className="py-4 px-8">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
               <div>
-                <span className="text-sonic-text-secondary text-xs font-medium uppercase tracking-wider">
+                <span className="text-sonic-text-secondary text-label">
                   Event Type
                 </span>
-                <p className="text-sonic-text mt-1 font-mono text-xs">
+                <p className="text-sonic-text mt-1 text-mono-value text-xs">
                   {log.event}
                 </p>
               </div>
               <div>
-                <span className="text-sonic-text-secondary text-xs font-medium uppercase tracking-wider">
+                <span className="text-sonic-text-secondary text-label">
                   Resource
                 </span>
-                <p className="text-sonic-text mt-1 font-mono text-xs">
+                <p className="text-sonic-text mt-1 text-mono-value text-xs">
                   {log.resource || 'N/A'}
                 </p>
               </div>
               <div>
-                <span className="text-sonic-text-secondary text-xs font-medium uppercase tracking-wider">
+                <span className="text-sonic-text-secondary text-label">
                   IP Address
                 </span>
-                <p className="text-sonic-text mt-1 font-mono text-xs">
+                <p className="text-sonic-text mt-1 text-mono-value text-xs">
                   {log.ipAddress}
                 </p>
               </div>
               <div>
-                <span className="text-sonic-text-secondary text-xs font-medium uppercase tracking-wider">
+                <span className="text-sonic-text-secondary text-label">
                   Full Details
                 </span>
                 <p className="text-sonic-text mt-1 text-xs">{log.details}</p>

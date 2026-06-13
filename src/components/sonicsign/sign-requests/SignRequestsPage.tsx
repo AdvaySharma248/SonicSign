@@ -182,14 +182,14 @@ export default function SignRequestsPage() {
       {/* Header */}
       <div className="flex items-center justify-between px-1 mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-sonic-text tracking-tight">
+          <h1 className="text-2xl text-page-title text-sonic-text">
             Sign Requests
           </h1>
-          <p className="text-sm text-sonic-text-secondary mt-1">
+          <p className="text-sm text-body text-sonic-text-secondary mt-1">
             Manage and track your document signature requests
           </p>
         </div>
-        <Button className="bg-sonic-primary hover:bg-sonic-primary/90 text-white shadow-sm">
+        <Button className="bg-sonic-primary hover:bg-sonic-primary/90 text-white shadow-sm text-button">
           <Plus className="size-4" />
           New Request
         </Button>
@@ -236,7 +236,7 @@ export default function SignRequestsPage() {
             <TableHeader>
               <TableRow className="hover:bg-transparent border-sonic-border">
                 <TableHead
-                  className="cursor-pointer select-none"
+                  className="cursor-pointer select-none text-label"
                   onClick={() => handleSort('documentName')}
                 >
                   <span className="inline-flex items-center">
@@ -245,7 +245,7 @@ export default function SignRequestsPage() {
                   </span>
                 </TableHead>
                 <TableHead
-                  className="cursor-pointer select-none"
+                  className="cursor-pointer select-none text-label"
                   onClick={() => handleSort('recipientName')}
                 >
                   <span className="inline-flex items-center">
@@ -254,7 +254,7 @@ export default function SignRequestsPage() {
                   </span>
                 </TableHead>
                 <TableHead
-                  className="cursor-pointer select-none"
+                  className="cursor-pointer select-none text-label"
                   onClick={() => handleSort('status')}
                 >
                   <span className="inline-flex items-center">
@@ -263,7 +263,7 @@ export default function SignRequestsPage() {
                   </span>
                 </TableHead>
                 <TableHead
-                  className="cursor-pointer select-none"
+                  className="cursor-pointer select-none text-label"
                   onClick={() => handleSort('sentDate')}
                 >
                   <span className="inline-flex items-center">
@@ -272,7 +272,7 @@ export default function SignRequestsPage() {
                   </span>
                 </TableHead>
                 <TableHead
-                  className="cursor-pointer select-none"
+                  className="cursor-pointer select-none text-label"
                   onClick={() => handleSort('completedDate')}
                 >
                   <span className="inline-flex items-center">
@@ -280,7 +280,7 @@ export default function SignRequestsPage() {
                     <ArrowUpDown className={cn('ml-1 inline size-3 transition-colors', sortField === 'completedDate' ? 'text-sonic-primary' : 'text-sonic-text-secondary/40')} />
                   </span>
                 </TableHead>
-                <TableHead className="w-12">Actions</TableHead>
+                <TableHead className="w-12 text-label">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -337,14 +337,14 @@ function RequestRow({
           <div className="flex items-center justify-center size-9 rounded-lg bg-sonic-secondary">
             <FileText className="size-4 text-sonic-primary" />
           </div>
-          <span className="font-medium text-sonic-text text-sm">
+          <span className="text-card-title text-sonic-text text-sm">
             {request.documentName}
           </span>
         </div>
       </TableCell>
       <TableCell className="py-3.5">
         <div>
-          <div className="text-sm font-medium text-sonic-text">
+          <div className="text-sm text-card-title text-sonic-text">
             {request.recipientName}
           </div>
           <div className="text-xs text-sonic-text-secondary">
@@ -415,7 +415,7 @@ function EmptyState({
       <div className="flex items-center justify-center size-14 rounded-2xl bg-muted/50 mb-4">
         <Inbox className="size-7 text-sonic-text-secondary" />
       </div>
-      <h3 className="text-lg font-medium text-sonic-text mb-1">
+      <h3 className="text-lg text-section-title text-sonic-text mb-1">
         No requests found
       </h3>
       <p className="text-sm text-sonic-text-secondary text-center max-w-sm">

@@ -6,8 +6,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-plus-jakarta), "Inter", system-ui, -apple-system, sans-serif;
+  --font-heading: "Clash Display", var(--font-plus-jakarta), "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", "Fira Code", ui-monospace, monospace;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -131,7 +132,117 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-plus-jakarta), "Inter", system-ui, -apple-system, sans-serif;
   }
+}
+
+/* ============================================
+   SONICSIGN TYPOGRAPHY SYSTEM
+   ============================================
+   Font Pairing:
+   - Headings: Clash Display (distinctive, premium)
+   - Body/UI:  Plus Jakarta Sans (friendly, modern, readable)
+   
+   Hierarchy:
+   - Page Titles:    700-800, tight tracking
+   - Section Titles: 600-700, slightly tight tracking
+   - Body:           400-500, normal tracking
+   - Small Labels:   500, normal tracking
+   - Navigation:     500-600
+   - Buttons:        600
+   - Metrics:        700, tabular numbers
+   ============================================ */
+
+/* ── Headings ────────────────────────────────── */
+.font-heading {
+  font-family: "Clash Display", var(--font-plus-jakarta), "Inter", system-ui, -apple-system, sans-serif;
+}
+
+/* ── Page Titles (H1) ────────────────────────── */
+/* Used for: Dashboard title, page headings, hero sections */
+.text-page-title {
+  font-family: "Clash Display", var(--font-plus-jakarta), "Inter", system-ui, -apple-system, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+}
+
+/* ── Section Titles (H2/H3) ──────────────────── */
+/* Used for: Card titles, section headings */
+.text-section-title {
+  font-family: "Clash Display", var(--font-plus-jakarta), "Inter", system-ui, -apple-system, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.25;
+}
+
+/* ── Metrics & Numbers ───────────────────────── */
+/* Used for: Stat card numbers, dashboard metrics */
+.text-metric {
+  font-family: var(--font-plus-jakarta), "Inter", system-ui, -apple-system, sans-serif;
+  font-weight: 700;
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+/* ── Navigation ──────────────────────────────── */
+/* Used for: Navbar tabs, sidebar links */
+.text-nav {
+  font-family: var(--font-plus-jakarta), "Inter", system-ui, -apple-system, sans-serif;
+  font-weight: 500;
+  letter-spacing: 0em;
+}
+
+/* ── Buttons ─────────────────────────────────── */
+/* Used for: All buttons */
+.text-button {
+  font-family: var(--font-plus-jakarta), "Inter", system-ui, -apple-system, sans-serif;
+  font-weight: 600;
+  letter-spacing: 0em;
+}
+
+/* ── Body text ───────────────────────────────── */
+/* Used for: Paragraphs, descriptions */
+.text-body {
+  font-family: var(--font-plus-jakarta), "Inter", system-ui, -apple-system, sans-serif;
+  font-weight: 400;
+  letter-spacing: 0em;
+}
+
+/* ── Medium body ─────────────────────────────── */
+/* Used for: Emphasized body text, table content */
+.text-body-medium {
+  font-family: var(--font-plus-jakarta), "Inter", system-ui, -apple-system, sans-serif;
+  font-weight: 500;
+  letter-spacing: 0em;
+}
+
+/* ── Small labels ────────────────────────────── */
+/* Used for: Tags, badges, captions */
+.text-label {
+  font-family: var(--font-plus-jakarta), "Inter", system-ui, -apple-system, sans-serif;
+  font-weight: 500;
+  letter-spacing: 0em;
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+/* ── Card titles (document names, etc.) ──────── */
+/* Used for: Document names in lists, item titles */
+.text-card-title {
+  font-family: var(--font-plus-jakarta), "Inter", system-ui, -apple-system, sans-serif;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+}
+
+/* ── Monospace (IP addresses, IDs, code) ────── */
+.text-mono-value {
+  font-family: "JetBrains Mono", "SF Mono", "Fira Code", ui-monospace, monospace;
+  font-weight: 500;
+  font-size: 0.8125rem;
+  letter-spacing: 0.02em;
 }
 
 /* Custom scrollbar */

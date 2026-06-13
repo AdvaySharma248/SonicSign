@@ -101,7 +101,7 @@ export default function DocumentDetailsPage() {
       <div className="flex h-full items-center justify-center">
         <div className="text-center">
           <FileText className="mx-auto h-12 w-12 text-sonic-text-secondary/40" />
-          <p className="mt-4 text-lg font-medium text-sonic-text">
+          <p className="mt-4 text-lg text-card-title text-sonic-text">
             Document not found
           </p>
           <p className="mt-1 text-sm text-sonic-text-secondary">
@@ -109,7 +109,7 @@ export default function DocumentDetailsPage() {
           </p>
           <Button
             variant="outline"
-            className="mt-4"
+            className="mt-4 text-button"
             onClick={() => setCurrentPage('documents')}
           >
             Back to Documents
@@ -272,13 +272,13 @@ export default function DocumentDetailsPage() {
           </Button>
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <h1 className="truncate text-base font-semibold text-sonic-text sm:text-lg">
+              <h1 className="truncate text-base text-page-title text-sonic-text sm:text-lg">
                 {document.name}
               </h1>
               <Badge
                 variant="outline"
                 className={cn(
-                  'shrink-0 border text-xs font-medium',
+                  'shrink-0 border text-xs text-card-title',
                   status.bg,
                   status.color
                 )}
@@ -295,20 +295,20 @@ export default function DocumentDetailsPage() {
         <div className="flex items-center gap-2">
           <Button
             onClick={handleRequestSignature}
-            className="bg-sonic-primary hover:bg-sonic-primary/90 text-white"
+            className="bg-sonic-primary hover:bg-sonic-primary/90 text-white text-button"
           >
             <PenTool className="mr-2 h-4 w-4" />
             <span className="hidden sm:inline">Request Signature</span>
             <span className="sm:hidden">Sign</span>
           </Button>
-          <Button variant="outline" size="default">
+          <Button variant="outline" size="default" className="text-button">
             <Download className="mr-2 h-4 w-4" />
             <span className="hidden sm:inline">Download</span>
           </Button>
           <Button
             variant="ghost"
             size="default"
-            className="text-sonic-danger hover:bg-red-50 hover:text-sonic-danger"
+            className="text-sonic-danger hover:bg-red-50 hover:text-sonic-danger text-button"
             onClick={handleDelete}
           >
             <Trash2 className="h-4 w-4" />
@@ -324,7 +324,7 @@ export default function DocumentDetailsPage() {
             <div className="p-4 sm:p-6 space-y-6">
               {/* Document Information */}
               <div>
-                <h2 className="mb-4 text-sm font-semibold text-sonic-text uppercase tracking-wide">
+                <h2 className="mb-4 text-sm text-section-title text-sonic-text uppercase tracking-wide">
                   Document Information
                 </h2>
                 <div className="space-y-3">
@@ -342,7 +342,7 @@ export default function DocumentDetailsPage() {
                         )}
                       />
                       <span
-                        className={cn('text-sm font-medium', status.color)}
+                        className={cn('text-sm text-card-title', status.color)}
                       >
                         {status.label}
                       </span>
@@ -355,7 +355,7 @@ export default function DocumentDetailsPage() {
                       <Calendar className="h-4 w-4" />
                       Upload Date
                     </span>
-                    <span className="text-sm font-medium text-sonic-text">
+                    <span className="text-sm text-card-title text-sonic-text">
                       {document.date}
                     </span>
                   </div>
@@ -372,7 +372,7 @@ export default function DocumentDetailsPage() {
                           {getInitials(document.owner)}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="text-sm font-medium text-sonic-text">
+                      <span className="text-sm text-card-title text-sonic-text">
                         {document.owner}
                       </span>
                     </div>
@@ -384,7 +384,7 @@ export default function DocumentDetailsPage() {
                       <HardDrive className="h-4 w-4" />
                       File Size
                     </span>
-                    <span className="text-sm font-medium text-sonic-text">
+                    <span className="text-sm text-card-title text-sonic-text">
                       {document.size}
                     </span>
                   </div>
@@ -395,7 +395,7 @@ export default function DocumentDetailsPage() {
                       <FileStack className="h-4 w-4" />
                       Pages
                     </span>
-                    <span className="text-sm font-medium text-sonic-text">
+                    <span className="text-sm text-card-title text-sonic-text">
                       {document.pages}
                     </span>
                   </div>
@@ -406,7 +406,7 @@ export default function DocumentDetailsPage() {
                       <Clock className="h-4 w-4" />
                       Last Modified
                     </span>
-                    <span className="text-sm font-medium text-sonic-text">
+                    <span className="text-sm text-card-title text-sonic-text">
                       {document.lastModified}
                     </span>
                   </div>
@@ -418,10 +418,10 @@ export default function DocumentDetailsPage() {
               {/* Signers Section */}
               <div>
                 <div className="mb-4 flex items-center justify-between">
-                  <h2 className="text-sm font-semibold text-sonic-text uppercase tracking-wide">
+                  <h2 className="text-sm text-section-title text-sonic-text uppercase tracking-wide">
                     Signers
                   </h2>
-                  <Button variant="ghost" size="sm" className="h-7 text-xs text-sonic-primary">
+                  <Button variant="ghost" size="sm" className="h-7 text-xs text-sonic-primary text-button">
                     <Plus className="mr-1 h-3 w-3" />
                     Add Signer
                   </Button>
@@ -463,7 +463,7 @@ export default function DocumentDetailsPage() {
                           </Avatar>
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center justify-between gap-2">
-                              <span className="truncate text-sm font-medium text-sonic-text">
+                              <span className="truncate text-sm text-card-title text-sonic-text">
                                 {signer.name}
                               </span>
                               <div className="flex items-center gap-1 shrink-0">
@@ -476,7 +476,7 @@ export default function DocumentDetailsPage() {
                                 )}
                                 <span
                                   className={cn(
-                                    'text-xs font-medium',
+                                    'text-xs text-card-title',
                                     signerStatus.color
                                   )}
                                 >
@@ -526,7 +526,7 @@ export default function DocumentDetailsPage() {
               >
                 <ZoomOut className="h-3.5 w-3.5" />
               </Button>
-              <span className="min-w-[3rem] text-center text-xs font-medium text-sonic-text-secondary">
+              <span className="min-w-[3rem] text-center text-xs text-card-title text-sonic-text-secondary">
                 {zoom}%
               </span>
               <Button
@@ -538,7 +538,7 @@ export default function DocumentDetailsPage() {
                 <ZoomIn className="h-3.5 w-3.5" />
               </Button>
             </div>
-            <span className="text-xs font-medium text-sonic-text-secondary">
+            <span className="text-xs text-card-title text-sonic-text-secondary">
               Page {currentPage} of {totalPages}
             </span>
           </div>
@@ -576,7 +576,7 @@ export default function DocumentDetailsPage() {
               <ChevronLeft className="mr-1 h-3.5 w-3.5" />
               Previous
             </Button>
-            <span className="text-sm font-medium text-sonic-text">
+            <span className="text-sm text-card-title text-sonic-text">
               {currentPage} / {totalPages}
             </span>
             <Button
