@@ -10,11 +10,29 @@ function cleanEmail(email) {
   return email.trim().toLowerCase();
 }
 
-function fromAddress() {
-  if (!env.smtpFromEmail) {
-    throw new Error('SMTP_FROM_EMAIL is required for SMTP delivery');
+function parseMailFrom(mailFrom) {
+  if (typeof mailFrom !== 'string') return {};
+  const trimmed = mailFrom.trim();
+  if (!trimmed) return {};
+
+  const match = trimmed.match(/^(.*?)\s*<([^<>]+)>$/);
+  if (match) {
+    const name = match[1].trim().replace(/^["']|["']$/g, '');
+    return { name, email: match[2].trim() };
   }
-  return `${env.smtpFromName || 'SonicSign'} <${env.smtpFromEmail}>`;
+
+  return { email: trimmed };
+}
+
+function fromAddress() {
+  const fallbackFrom = parseMailFrom(env.mailFrom);
+  const senderEmail = env.smtpFromEmail || fallbackFrom.email;
+  const senderName = env.smtpFromName || fallbackFrom.name || 'SonicSign';
+
+  if (!senderEmail) {
+    throw new Error('SMTP_FROM_EMAIL or MAIL_FROM is required for SMTP delivery');
+  }
+  return `${senderName} <${senderEmail}>`;
 }
 
 function createTransporter() {
@@ -28,14 +46,16 @@ function createTransporter() {
     throw new Error('SMTP_PASS is required when SMTP_USER is configured');
   }
 
+  const enableSmtpDebugLogs = env.nodeEnv !== 'production';
+
   return nodemailer.createTransport({
     host: env.smtpHost,
     port: env.smtpPort,
     secure: env.smtpSecure,
     auth: env.smtpUser ? { user: env.smtpUser, pass: env.smtpPass } : undefined,
     requireTLS: !env.smtpSecure && env.smtpPort === 587,
-    logger: true,
-    debug: true,
+    logger: enableSmtpDebugLogs,
+    debug: enableSmtpDebugLogs,
     family: 4,
   });
 }
@@ -56,20 +76,10 @@ async function sendTemplatedEmail({ recipient, template, documentId, userId, typ
     text: template.text,
   });
 
-  // Asynchronously trigger queue processing immediately (non-blocking)
-  setImmediate(() => {
-    try {
-      console.log('setImmediate: importing and executing processEmailQueue');
-      const { processEmailQueue } = require('../jobs/emailQueueJob');
-      processEmailQueue().catch((err) => {
-        console.error('Async email queue processing trigger failed:', err);
-      });
-    } catch (err) {
-      console.error('Error during require of emailQueueJob in setImmediate:', err);
-    }
-  });
+  const { processEmailLog } = require('../jobs/emailQueueJob');
+  const processedLog = await processEmailLog(log._id, { throwOnFailure: true });
 
-  return log;
+  return processedLog || log;
 }
 
 const emailService = {

@@ -4,6 +4,48 @@ const { emailQueue } = require('../services/email.queue');
 
 let isProcessing = false;
 
+async function processEmailLog(logId, options = {}) {
+  const { throwOnFailure = false } = options;
+  const lockedLog = await EmailLog.findOneAndUpdate(
+    { _id: logId, status: 'queued' },
+    { status: 'processing' },
+    { new: true }
+  );
+
+  if (!lockedLog) {
+    console.log(`processEmailLog: log ${logId} already locked/processed by another worker.`);
+    return EmailLog.findById(logId);
+  }
+
+  try {
+    console.log(`processEmailLog: sending email to ${lockedLog.recipient}...`);
+    const result = await emailService.sendMailFromLog(lockedLog);
+    await emailQueue.markSent(lockedLog._id, result);
+    const deliveredLog = await emailQueue.markDelivered(lockedLog._id);
+    console.log(`processEmailLog: successfully delivered email to ${lockedLog.recipient}`);
+    return deliveredLog;
+  } catch (error) {
+    console.error(`processEmailLog: Email delivery failed for log ${lockedLog._id}:`, error.message);
+
+    const currentRetryCount = lockedLog.retryCount || 0;
+    if (currentRetryCount < 3) {
+      const delaySeconds = getNextRetryDelaySeconds(currentRetryCount);
+      const nextAttemptAt = new Date(Date.now() + delaySeconds * 1000);
+      await emailQueue.markRetry(lockedLog._id, error, nextAttemptAt, currentRetryCount + 1);
+      console.log(`processEmailLog: scheduled retry #${currentRetryCount + 1} for email log ${lockedLog._id} at ${nextAttemptAt}`);
+    } else {
+      await emailQueue.markFailed(lockedLog._id, error);
+      console.error(`processEmailLog: email log ${lockedLog._id} failed after maximum retries.`);
+    }
+
+    if (throwOnFailure) {
+      throw error;
+    }
+
+    return EmailLog.findById(lockedLog._id);
+  }
+}
+
 async function processEmailQueue() {
   if (isProcessing) {
     console.log('processEmailQueue: already processing, skipping.');
@@ -30,37 +72,7 @@ async function processEmailQueue() {
 
     for (const log of logs) {
       console.log(`processEmailQueue: locking log ${log._id} for recipient ${log.recipient}`);
-      const lockedLog = await EmailLog.findOneAndUpdate(
-        { _id: log._id, status: 'queued' },
-        { status: 'processing' },
-        { new: true }
-      );
-
-      if (!lockedLog) {
-        console.log(`processEmailQueue: log ${log._id} already locked/processed by another worker.`);
-        continue;
-      }
-
-      try {
-        console.log(`processEmailQueue: sending email to ${lockedLog.recipient}...`);
-        const result = await emailService.sendMailFromLog(lockedLog);
-        await emailQueue.markSent(lockedLog._id, result);
-        await emailQueue.markDelivered(lockedLog._id);
-        console.log(`processEmailQueue: successfully delivered email to ${lockedLog.recipient}`);
-      } catch (error) {
-        console.error(`processEmailQueue: Email delivery failed for log ${lockedLog._id}:`, error.message);
-
-        const currentRetryCount = lockedLog.retryCount || 0;
-        if (currentRetryCount < 3) {
-          const delaySeconds = getNextRetryDelaySeconds(currentRetryCount);
-          const nextAttemptAt = new Date(Date.now() + delaySeconds * 1000);
-          await emailQueue.markRetry(lockedLog._id, error, nextAttemptAt, currentRetryCount + 1);
-          console.log(`processEmailQueue: scheduled retry #${currentRetryCount + 1} for email log ${lockedLog._id} at ${nextAttemptAt}`);
-        } else {
-          await emailQueue.markFailed(lockedLog._id, error);
-          console.error(`processEmailQueue: email log ${lockedLog._id} failed after maximum retries.`);
-        }
-      }
+      await processEmailLog(log._id);
     }
   } catch (error) {
     console.error('processEmailQueue: error running email queue process:', error);
@@ -76,5 +88,6 @@ function getNextRetryDelaySeconds(retryCount) {
 }
 
 module.exports = {
+  processEmailLog,
   processEmailQueue,
 };
