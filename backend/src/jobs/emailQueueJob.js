@@ -12,6 +12,12 @@ async function processEmailQueue() {
   isProcessing = true;
 
   try {
+    const stuckThreshold = new Date(Date.now() - 5 * 60 * 1000);
+    await EmailLog.updateMany(
+      { status: 'processing', updatedAt: { $lt: stuckThreshold } },
+      { status: 'queued', nextAttemptAt: new Date() }
+    );
+
     const now = new Date();
     const logs = await EmailLog.find({
       status: 'queued',

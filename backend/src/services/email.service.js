@@ -36,6 +36,7 @@ function createTransporter() {
     requireTLS: !env.smtpSecure && env.smtpPort === 587,
     logger: true,
     debug: true,
+    family: 4,
   });
 }
 
