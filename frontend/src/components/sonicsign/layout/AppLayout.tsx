@@ -6,7 +6,7 @@ import { MobileNav } from './MobileNav';
 import { useAppStore } from '@/store/useAppStore';
 import { authApi } from '@/services/api';
 import { cn } from '@/lib/utils';
-import { PenLine, LogOut } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface AppLayoutProps {
@@ -82,9 +82,11 @@ export function AppLayout({ children }: AppLayoutProps) {
 
       {/* Suspended Logo overlay (Aligned with Navbar vertical center at top-[34px]) */}
       <div className="fixed top-[34px] left-[32px] z-40 hidden md:flex items-center gap-2.5 select-none pointer-events-none">
-        <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-[#365CF5] shadow-md shadow-[#365CF5]/10 pointer-events-auto">
-          <PenLine className="w-4 h-4 text-white" strokeWidth={2.2} />
-        </div>
+        <img
+          src="/logo.svg"
+          alt="SonicSign Logo"
+          className="w-8 h-8 object-contain pointer-events-auto"
+        />
         <span className="text-[#111827] text-base font-heading tracking-tight font-extrabold uppercase pointer-events-auto">
           SonicSign
         </span>
@@ -125,9 +127,11 @@ export function AppLayout({ children }: AppLayoutProps) {
       {/* Mobile Top Header */}
       <div className="fixed top-0 left-0 right-0 z-40 flex md:hidden items-center justify-between px-4 h-14 bg-white/80 backdrop-blur-md border-b border-sonic-border">
         <div className="flex items-center gap-2">
-          <div className="flex items-center justify-center w-7 h-7 rounded-md bg-[#365CF5]">
-            <PenLine className="w-3.5 h-3.5 text-white" strokeWidth={2.2} />
-          </div>
+          <img
+            src="/logo.svg"
+            alt="SonicSign Logo"
+            className="w-7 h-7 object-contain"
+          />
           <span className="text-[#111827] text-sm font-heading tracking-tight font-extrabold uppercase">
             SonicSign
           </span>

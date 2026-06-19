@@ -159,12 +159,11 @@ export function AuthLayout({ children, authViewKey }: AuthLayoutProps) {
             className="w-full bg-white/80 backdrop-blur-xl border border-white/45 shadow-[0_20px_50px_rgba(0,0,0,0.1)] rounded-[32px] p-6 sm:p-8 relative overflow-hidden"
           >
             <div className="flex flex-col items-center mb-6 select-none shrink-0">
-              <div className="flex items-center justify-center w-11 h-11 rounded-[12px] bg-[#365CF5] shadow-lg shadow-[#365CF5]/10 border border-white/10 mb-3">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white">
-                  <path d="M6 18C8.5 18 10 15 11.5 11C13 7 14.5 5 17 5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M9 13C10.5 13 11.5 11 12.5 8C13.5 5 14.5 4 16 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-50" />
-                </svg>
-              </div>
+              <img
+                src="/logo.svg"
+                alt="SonicSign Logo"
+                className="w-11 h-11 object-contain mb-3"
+              />
               <span className="text-[#111827] text-base font-heading tracking-tight font-extrabold uppercase">
                 SonicSign
               </span>
